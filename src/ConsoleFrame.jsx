@@ -3,7 +3,7 @@ import Switchboard from './Switchboard'
 
 const ConsoleFrame = () => {
   return (
-    <div className="relative bg-[#F1F1F1] rounded-xl shadow-lg p-6 w-[626px] h-[780px] flex-shrink-0 border-b-[10px] border-b-[#676767]">
+    <div className="relative bg-[#F1F1F1] rounded-xl shadow-lg p-6 w-[626px] h-[800px] flex-shrink-0 border-b-[10px] border-b-[#676767]">
       {/* Canvas Area - Centered */}
       <div className="flex justify-center mb-6">
         <div className="bg-[#232323] rounded-md h-[417px] w-[590px] flex-shrink-0 relative">

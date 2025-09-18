@@ -1,6 +1,7 @@
 import React from 'react'
 import ConsoleFrame from './ConsoleFrame'
 import UploadSlot from './UploadSlot'
+import UploadArea from './UploadArea'
 
 function App() {
   return (
@@ -9,9 +10,10 @@ function App() {
         {/* Header */}
         
         
-        {/* Main Layout - Centered Console */}
-        <div className="flex justify-center items-start">
+        {/* Main Layout - Console and Upload Area */}
+        <div className="flex justify-center items-start gap-8">
           <ConsoleFrame />
+          <UploadArea />
         </div>
         
         {/* Footer */}

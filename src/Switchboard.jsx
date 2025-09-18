@@ -2,7 +2,7 @@ import React from 'react'
 
 const Switchboard = () => {
   return (
-    <div className="w-[590px] h-[296px] bg-[#232323] border-2 border-gray-600 rounded-lg p-[2px] shadow-xl">
+    <div className="w-[590px] h-[311px] bg-[#232323] border-2 border-gray-600 rounded-lg p-[2px] shadow-xl">
       {/* Pattern Type Slider */}
       <div className="mb-[2px] flex gap-[2px]">
         {/* Pattern Type Slider */}
@@ -113,7 +113,7 @@ const Switchboard = () => {
       {/* Knobs Row */}
       <div className="flex gap-[2px]">
         {/* Frequency Knob Frame */}
-        <div className="w-[195px] h-[175px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="164" height="149" viewBox="0 0 164 149" fill="none" className="absolute top-4">
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
@@ -146,7 +146,7 @@ const Switchboard = () => {
         </div>
 
         {/* Rotation Knob Frame */}
-        <div className="w-[195px] h-[175px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="164" height="149" viewBox="0 0 164 149" fill="none" className="absolute top-4">
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
@@ -179,7 +179,7 @@ const Switchboard = () => {
         </div>
 
         {/* Scale Knob Frame */}
-        <div className="w-[195px] h-[175px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" width="164" height="149" viewBox="0 0 164 149" fill="none" className="absolute">
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="black" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
