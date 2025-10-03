@@ -3,6 +3,8 @@ import Switchboard from './Switchboard'
 
 const ConsoleFrame = ({ 
   uploadedImage, 
+  imageMetadata,
+  isExtractingMetadata,
   patternType, 
   frequency, 
   rotation, 
@@ -24,6 +26,9 @@ const ConsoleFrame = ({
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    // Generate pattern based on pattern type
+    generatePattern(ctx, canvas.width, canvas.height)
     
     // If we have an uploaded image, draw it centered
     if (uploadedImage) {
@@ -54,15 +59,112 @@ const ConsoleFrame = ({
       
       // Draw the image
       ctx.drawImage(uploadedImage, x, y, scaledWidth, scaledHeight)
-    } else {
-      // Draw placeholder text
-      ctx.fillStyle = '#666666'
-      ctx.font = '18px Arial'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText('Upload an image to see it here', canvas.width / 2, canvas.height / 2)
     }
-  }, [uploadedImage, tint])
+  }, [uploadedImage, tint, patternType, frequency, rotation, scale])
+
+  // Generate pattern based on pattern type
+  const generatePattern = (ctx, width, height) => {
+    // Set background
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, width, height)
+    
+    // Generate pattern based on type
+    switch (patternType) {
+      case 'wave':
+        generateWavePattern(ctx, width, height)
+        break
+      case 'bump':
+        generateBumpPattern(ctx, width, height)
+        break
+      case 'contour':
+        generateContourPattern(ctx, width, height)
+        break
+      default:
+        generateWavePattern(ctx, width, height)
+    }
+  }
+
+  // Sinusoidal Waves pattern generation
+  const generateWavePattern = (ctx, width, height) => {
+    const numLayers = Math.max(1, Math.floor(scale * 3))
+    const layerSpacing = height / numLayers
+    
+    for (let layer = 0; layer < numLayers; layer++) {
+      const baseY = layer * layerSpacing + layerSpacing / 2
+      const amplitude = 30 + layer * 10
+      const frequency = 0.01 + layer * 0.005
+      const phase = rotation * Math.PI / 180 + layer * 0.8
+      
+      // Create multiple sine waves for complexity
+      ctx.strokeStyle = tint || `hsl(${(200 + layer * 40) % 360}, 70%, 80%)`
+      ctx.lineWidth = 1 + layer * 0.5
+      ctx.beginPath()
+      
+      for (let x = 0; x < width; x += 1) {
+        let waveY = baseY
+        
+        // Primary wave
+        waveY += Math.sin(x * frequency + phase) * amplitude
+        
+        // Secondary wave for organic curves
+        waveY += Math.sin(x * frequency * 2.3 + phase * 1.7) * amplitude * 0.3
+        
+        // Tertiary wave for fine detail
+        waveY += Math.sin(x * frequency * 4.7 + phase * 0.5) * amplitude * 0.1
+        
+        // Add noise-based variation
+        const noiseVariation = (Math.random() - 0.5) * 10
+        waveY += noiseVariation
+        
+        if (x === 0) {
+          ctx.moveTo(x, waveY)
+        } else {
+          ctx.lineTo(x, waveY)
+        }
+      }
+      ctx.stroke()
+    }
+  }
+
+  // Bump pattern generation
+  const generateBumpPattern = (ctx, width, height) => {
+    const spacing = 30 * scale
+    const bumpSize = 20 * scale
+    
+    ctx.fillStyle = tint || '#ffffff'
+    
+    for (let x = spacing; x < width; x += spacing) {
+      for (let y = spacing; y < height; y += spacing) {
+        const offsetX = Math.sin(x * 0.01 + rotation * Math.PI / 180) * 10
+        const offsetY = Math.cos(y * 0.01 + rotation * Math.PI / 180) * 10
+        
+        ctx.beginPath()
+        ctx.arc(x + offsetX, y + offsetY, bumpSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
+    }
+  }
+
+  // Contour pattern generation
+  const generateContourPattern = (ctx, width, height) => {
+    const spacing = 25 * scale
+    const lineWidth = 1
+    
+    ctx.strokeStyle = tint || '#ffffff'
+    ctx.lineWidth = lineWidth
+    
+    // Draw contour lines
+    for (let y = spacing; y < height; y += spacing) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      
+      for (let x = 0; x < width; x += 5) {
+        const offset = Math.sin(x * frequency * 0.01 + rotation * Math.PI / 180) * 15
+        ctx.lineTo(x, y + offset)
+      }
+      ctx.stroke()
+    }
+  }
 
   // Handle download functionality
   const handleDownload = () => {
@@ -100,20 +202,141 @@ const ConsoleFrame = ({
   return (
     <div className="flex gap-4">
       {/* Debug Area - Left Side */}
-      <div className="w-48 p-3 bg-gray-800 rounded-lg text-white text-sm h-fit">
+      <div className="w-64 p-3 bg-gray-800 rounded-lg text-white text-sm h-fit max-h-[800px] overflow-y-auto">
         <div className="font-bold mb-2">Debug Info:</div>
-        <div>Pattern Type: <span className="text-yellow-300">{patternType}</span></div>
-        <div>Frequency: <span className="text-yellow-300">{frequency}</span></div>
-        <div>Rotation: <span className="text-yellow-300">{rotation}°</span></div>
-        <div>Scale: <span className="text-yellow-300">{scale}x</span></div>
-        <div className="flex items-center gap-2">
-          Tint: 
-          <span className="text-yellow-300">{tint || 'none'}</span>
-          {tint && (
-            <div 
-              className="w-6 h-6 rounded border border-gray-400"
-              style={{ backgroundColor: tint }}
-            ></div>
+        
+        {/* Pattern Controls */}
+        <div className="mb-4">
+          <div className="font-semibold text-blue-300 mb-1">Pattern Controls:</div>
+          <div>Type: <span className="text-yellow-300">{patternType}</span></div>
+          <div>Frequency: <span className="text-yellow-300">{frequency}</span></div>
+          <div>Rotation: <span className="text-yellow-300">{rotation}°</span></div>
+          <div>Scale: <span className="text-yellow-300">{scale}x</span></div>
+          <div className="flex items-center gap-2">
+            Tint: 
+            <span className="text-yellow-300">{tint || 'none'}</span>
+            {tint && (
+              <div 
+                className="w-6 h-6 rounded border border-gray-400"
+                style={{ backgroundColor: tint }}
+              ></div>
+            )}
+          </div>
+        </div>
+
+        {/* Image Metadata */}
+        {(imageMetadata || isExtractingMetadata) && (
+          <div className="mb-4">
+            <div className="font-semibold text-green-300 mb-1 flex items-center gap-2">
+              Image Metadata:
+              {isExtractingMetadata && (
+                <div className="animate-spin rounded-full h-3 w-3 border-b border-green-300"></div>
+              )}
+            </div>
+            
+            {/* Camera Information */}
+            {imageMetadata && (
+              <div className="mb-2">
+                <div className="text-xs text-gray-400 mb-1">Camera:</div>
+                {imageMetadata.phoneType && (
+                  <div className="text-sm">Phone: <span className="text-yellow-300">{imageMetadata.phoneType}</span></div>
+                )}
+                {imageMetadata.lensType && (
+                  <div className="text-sm">Lens: <span className="text-yellow-300">{imageMetadata.lensType}</span></div>
+                )}
+                {imageMetadata.lens && !imageMetadata.phoneType && (
+                  <div className="text-sm">Camera: <span className="text-yellow-300">{imageMetadata.lens}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* Technical Settings */}
+            {imageMetadata && (
+              <div className="mb-2">
+                <div className="text-xs text-gray-400 mb-1">Settings:</div>
+                {imageMetadata.iso && (
+                  <div className="text-sm">ISO: <span className="text-yellow-300">{imageMetadata.iso}</span></div>
+                )}
+                {imageMetadata.aperture && (
+                  <div className="text-sm">Aperture: <span className="text-yellow-300">f/{imageMetadata.aperture}</span></div>
+                )}
+                {imageMetadata.flash !== undefined && (
+                  <div className="text-sm">Flash: <span className="text-yellow-300">{imageMetadata.flash ? 'Yes' : 'No'}</span></div>
+                )}
+                {imageMetadata.orientation && (
+                  <div className="text-sm">Orientation: <span className="text-yellow-300">{imageMetadata.orientation}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* Temporal Information */}
+            {imageMetadata && (
+              <div className="mb-2">
+                <div className="text-xs text-gray-400 mb-1">Time:</div>
+                {imageMetadata.timeOfDay && (
+                  <div className="text-sm">Period: <span className="text-yellow-300 capitalize">{imageMetadata.timeOfDay}</span></div>
+                )}
+                {imageMetadata.date && (
+                  <div className="text-sm">Date: <span className="text-yellow-300">{imageMetadata.date}</span></div>
+                )}
+                {imageMetadata.time && (
+                  <div className="text-sm">Time: <span className="text-yellow-300">{imageMetadata.time}</span></div>
+                )}
+                {imageMetadata.season && (
+                  <div className="text-sm">Season: <span className="text-yellow-300 capitalize">{imageMetadata.season}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* Image Properties */}
+            {imageMetadata && (
+              <div className="mb-2">
+                <div className="text-xs text-gray-400 mb-1">Properties:</div>
+                {imageMetadata.width && imageMetadata.height && (
+                  <div className="text-sm">Size: <span className="text-yellow-300">{imageMetadata.width} × {imageMetadata.height}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* GPS Information */}
+            {imageMetadata && imageMetadata.gps && (
+              <div className="mb-2">
+                <div className="text-xs text-gray-400 mb-1">Location:</div>
+                {imageMetadata.gps.latitude && (
+                  <div className="text-sm">Lat: <span className="text-yellow-300">{imageMetadata.gps.latitude.toFixed(6)}</span></div>
+                )}
+                {imageMetadata.gps.longitude && (
+                  <div className="text-sm">Lng: <span className="text-yellow-300">{imageMetadata.gps.longitude.toFixed(6)}</span></div>
+                )}
+              </div>
+            )}
+
+            {/* Metadata Source Indicator */}
+            {imageMetadata && (
+              <div className="mt-2 pt-2 border-t border-gray-600">
+                <div className="text-xs text-gray-400">
+                  Source: <span className="text-blue-300">ExifTool API</span>
+                </div>
+              </div>
+            )}
+            
+            {/* Extraction Status */}
+            {isExtractingMetadata && !imageMetadata && (
+              <div className="mt-2 pt-2 border-t border-gray-600">
+                <div className="text-xs text-gray-400">
+                  Status: <span className="text-yellow-300">Extracting metadata...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Image Status */}
+        <div>
+          <div className="font-semibold text-purple-300 mb-1">Image Status:</div>
+          <div>Uploaded: <span className="text-yellow-300">{uploadedImage ? 'Yes' : 'No'}</span></div>
+          {uploadedImage && (
+            <div>Size: <span className="text-yellow-300">{uploadedImage.width} × {uploadedImage.height}</span></div>
           )}
         </div>
       </div>

@@ -1,0 +1,61 @@
+# Pattern Generator Roadmap
+
+## Pattern Options Available
+
+### Currently Implemented in Console (3 options):
+1. **wave** - Sinusoidal Waves pattern (Option 2: 📐)
+2. **bump** - Flowing Dot Field pattern (Option 3: 🌀)
+3. **contour** - Shape Contours pattern (Option 6: 🔷)
+
+### Ready for Future Implementation (3 additional options):
+4. **bouncing** - Bouncing Animation pattern (Option 1: 🌊)
+5. **static** - Static Contours pattern (Option 4: 🎯)
+6. **topographic** - Topographic Lines pattern (Option 5: 🗺️)
+
+## Implementation Status
+
+### ✅ Completed:
+- All 6 pattern functions added to `src/utils/p5PatternGenerator.ts`
+- Pattern type mapping updated in `src/GenerativePatternCanvas.tsx`
+- Console interface updated with 3 new patterns: wave, bump, contour
+- Original pattern logic implemented with proper initialization and settings
+- Pattern functions ready for activation via `patternType` parameter
+
+### 🔄 Ready for Future:
+- 3 additional pattern types can be activated by:
+  1. Adding pattern types to `Controls.jsx` component
+  2. Updating UI to display all 6 options
+  3. Pattern logic already exists and is ready to use
+
+## Pattern Function Names:
+- `drawBouncingAnimation()` - Bouncing Animation
+- `drawSinusoidalWaves()` - Sinusoidal Waves  
+- `drawFlowingDotField()` - Flowing Dot Field
+- `drawStaticContours()` - Static Contours
+- `drawTopographicLines()` - Topographic Lines
+- `drawShapeContours()` - Shape Contours
+
+## Pattern Type Values:
+- `'wave'` - Sinusoidal Waves (currently active)
+- `'bump'` - Flowing Dot Field (currently active)
+- `'contour'` - Shape Contours (currently active)
+- `'bouncing'` - Bouncing Animation (ready for future)
+- `'static'` - Static Contours (ready for future)
+- `'topographic'` - Topographic Lines (ready for future)
+
+## Notes:
+- All pattern functions copied from `/Users/jeremystokes/Desktop/generative_art/generative_art_system.html`
+- Pattern functions use marching squares algorithm for contour generation
+- Each pattern has specific shape, alignment, and stream count mappings
+- New patterns set stream count to 0 as they handle their own rendering
+
+## Upcoming Improvements:
+- Fix positioning of bump map
+- Fix generative image for the waves
+- Change image of bump map to white
+- Add feature for toggle of animation
+
+## Recent Changes:
+- ✅ Renamed frequency knob to scale knob - now controls dot size instead of particle count
+- ✅ Updated UI labels and debug display to reflect scale control
+- ✅ Implemented color tinting for all pattern types

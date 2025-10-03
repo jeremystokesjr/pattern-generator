@@ -10,7 +10,7 @@ const Controls = ({
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
-  onTintChange 
+  onTintChange
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [dragType, setDragType] = useState(null)
@@ -19,7 +19,7 @@ const Controls = ({
   const [lastUpdateTime, setLastUpdateTime] = useState(0)
 
   // Pattern type slider positions
-  const patternTypes = ['radial', 'grid', 'tile']
+  const patternTypes = ['wave', 'bump', 'contour']
   const currentPatternIndex = patternTypes.indexOf(patternType)
   // Calculate position within the track boundaries (accounting for knob width)
   const trackWidth = 521 // Width of the horizontal line
@@ -42,13 +42,12 @@ const Controls = ({
     let newIndex
     if (position < 0.33) {
       newIndex = 0
-    } else if (position < 0.67) {
+    } else if (position < 0.66) {
       newIndex = 1
     } else {
       newIndex = 2
     }
     
-    console.log('Clicking to set pattern to:', patternTypes[newIndex])
     onPatternTypeChange(patternTypes[newIndex])
   }
 
@@ -56,14 +55,12 @@ const Controls = ({
   const handlePatternTypeMouseDown = (e) => {
     e.preventDefault()
     e.stopPropagation() // Prevent click event on white area
-    console.log('Pattern knob mouse down!')
     setIsDragging(true)
     setDragType('patternType')
     setDragStart({ x: e.clientX, y: e.clientY })
     
     // Get current pattern type index
     const currentIndex = patternTypes.indexOf(patternType)
-    console.log('Starting drag from index:', currentIndex, 'pattern:', patternType)
     setDragStartValue(currentIndex)
   }
 
@@ -73,9 +70,12 @@ const Controls = ({
     setDragType(type)
     setDragStart({ x: e.clientX, y: e.clientY })
     
+    // Change cursor to grabbing
+    document.body.style.cursor = 'grabbing'
+    
     switch (type) {
       case 'frequency':
-        setDragStartValue(frequency)
+        setDragStartValue(scale) // Now controlling scale instead of frequency
         break
       case 'rotation':
         setDragStartValue(rotation)
@@ -91,14 +91,14 @@ const Controls = ({
   const handleMouseMove = (e) => {
     if (!isDragging) return
 
-    // Throttle updates to improve precision (max 60fps)
+    // Throttle updates to improve precision (max 120fps)
     const now = Date.now()
-    if (now - lastUpdateTime < 16) return // ~60fps
+    if (now - lastUpdateTime < 8) return // ~120fps for smoother interaction
     setLastUpdateTime(now)
 
     const deltaX = e.clientX - dragStart.x
     const deltaY = dragStart.y - e.clientY // Invert Y for intuitive control
-    const sensitivity = 0.1 // Reduced sensitivity for better precision
+    const sensitivity = 0.3 // Increased sensitivity for easier rotation
 
     let newValue = dragStartValue
 
@@ -128,8 +128,8 @@ const Controls = ({
         }
         break
       case 'frequency':
-        newValue = Math.max(1, Math.min(10, dragStartValue + deltaX * sensitivity))
-        onFrequencyChange(Math.round(newValue * 10) / 10) // Round to 1 decimal
+        newValue = Math.max(0.1, Math.min(3.0, dragStartValue + deltaX * sensitivity))
+        onScaleChange(Math.round(newValue * 10) / 10) // Round to 1 decimal, now controlling scale
         break
       case 'rotation':
         newValue = (dragStartValue + deltaX * sensitivity) % 360
@@ -173,6 +173,9 @@ const Controls = ({
   const handleMouseUp = () => {
     setIsDragging(false)
     setDragType(null)
+    
+    // Reset cursor
+    document.body.style.cursor = 'default'
   }
 
 
@@ -180,14 +183,12 @@ const Controls = ({
   const handleColorSliderMouseDown = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Color slider mouse down!')
     setIsDragging(true)
     setDragType('colorSlider')
     setDragStart({ x: e.clientX, y: e.clientY })
     
     // Get current color position based on current tint
     const currentColorIndex = getColorIndexFromTint(tint)
-    console.log('Starting color drag from index:', currentColorIndex, 'color:', tint)
     setDragStartValue(currentColorIndex)
   }
 
@@ -213,7 +214,6 @@ const Controls = ({
     const normalizedColorValues = colorValues.map(color => color.replace('#', ''))
     const index = normalizedColorValues.indexOf(normalizedTint)
     
-    console.log('Looking for tint:', tint, 'normalized:', normalizedTint, 'found at index:', index)
     return index >= 0 ? index : 3
   }
 
@@ -227,9 +227,8 @@ const Controls = ({
   const dialPosition = (currentColorIndex / 6) * 100 // 0% to 100%
 
   // Calculate dial rotations based on current values
-  const frequencyRotation = ((frequency - 1) / 9) * 270 - 135 // -135° to +135° (270° range)
+  const frequencyRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range) - now using scale
   const rotationDialRotation = rotation // 0° to 360°
-  const scaleRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range)
 
   useEffect(() => {
     if (isDragging) {
@@ -243,12 +242,12 @@ const Controls = ({
   }, [isDragging, dragStart, dragStartValue, dragType])
 
   return (
-    <div className="w-[590px] h-[311px] bg-[#232323] border-2 border-gray-600 rounded-lg p-[2px] shadow-xl">
+    <div className="w-[590px] h-[311px] bg-[#232323] border-2 border-gray-600 rounded-lg p-[2px] shadow-xl flex-shrink-0 overflow-hidden">
       {/* Pattern Type Slider */}
-      <div className="mb-[2px] flex gap-[2px]">
+      <div className="mb-[2px] flex gap-[2px] h-[109px]">
         {/* Pattern Type Slider */}
         <div 
-          className="relative w-[540px] h-[109px] bg-white rounded-[6.86px] shadow-inner cursor-pointer"
+          className="relative w-[540px] h-[109px] bg-white rounded-[6.86px] shadow-inner cursor-pointer flex-shrink-0"
           onClick={handlePatternTypeClick}
         >
           {/* Slider Indicator */}
@@ -290,7 +289,7 @@ const Controls = ({
                 </filter>
                 <filter id="filter2_f_16_588" x="28" y="4" width="11" height="50" filterUnits="userSpaceOnUse" colorInterpolationFilters="sRGB">
                   <feFlood floodOpacity="0" result="BackgroundImageFix"/>
-                  <feBlend mode="normal" in2="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+                  <feBlend mode="normal" in2="BackgroundImageFix" result="shape"/>
                   <feGaussianBlur stdDeviation="2" result="effect1_foregroundBlur_16_588"/>
                 </filter>
                 <linearGradient id="paint0_linear_16_588" x1="55" y1="29" x2="10" y2="29" gradientUnits="userSpaceOnUse">
@@ -316,25 +315,25 @@ const Controls = ({
           <div className="absolute left-1/2 transform -translate-x-1/2 w-[521px] flex justify-between px-8 pointer-events-none">
             <div className="relative">
               <div className="absolute top-[41px] left-1/2 transform -translate-x-1/2 w-[1px] h-[27px] bg-[#222] rounded-[999px]"></div>
-              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">radial</div>
+              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">wave</div>
             </div>
             
             <div className="relative">
               <div className="absolute top-[41px] left-1/2 transform -translate-x-1/2 w-[1px] h-[27px] bg-[#222] rounded-[999px]"></div>
-              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">grid</div>
+              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">bump</div>
             </div>
             
             <div className="relative">
               <div className="absolute top-[41px] left-1/2 transform -translate-x-1/2 w-[1px] h-[27px] bg-[#222] rounded-[999px]"></div>
-              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">tile</div>
+              <div className="absolute top-[75px] left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">contour</div>
             </div>
           </div>
         </div>
 
         {/* Color Slider */}
-        <div className="relative">
+        <div className="relative flex-shrink-0">
           <div 
-            className="w-[43px] h-[109px] rounded-[6px] shadow-inner cursor-pointer"
+            className="w-[43px] h-[109px] rounded-[6px] shadow-inner cursor-pointer flex-shrink-0"
             style={{
               background: 'linear-gradient(180deg, #FD0004 0%, #E86615 16.67%, #FC0 33.33%, #00FF1E 50%, #002AFF 66.67%, #8015E8 83.33%, #FF00D0 100%)'
             }}
@@ -363,16 +362,16 @@ const Controls = ({
       </div>
 
       {/* Knobs Row */}
-      <div className="flex gap-[2px]">
+      <div className="flex gap-[2px] h-[190px] flex-shrink-0">
         {/* Frequency Knob Frame */}
-        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center flex-shrink-0">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             width="164" 
             height="149" 
             viewBox="0 0 164 149" 
             fill="none" 
-            className="absolute top-4 cursor-pointer"
+            className="absolute top-4 cursor-grab active:cursor-grabbing"
             onMouseDown={(e) => handleKnobMouseDown(e, 'frequency')}
           >
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
@@ -403,19 +402,19 @@ const Controls = ({
               </radialGradient>
             </defs>
           </svg>
-          {/* Frequency Label */}
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">frequency</div>
+          {/* Scale Label */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">scale</div>
         </div>
 
         {/* Rotation Knob Frame */}
-        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center flex-shrink-0">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             width="164" 
             height="149" 
             viewBox="0 0 164 149" 
             fill="none" 
-            className="absolute top-4 cursor-pointer"
+            className="absolute top-4 cursor-grab active:cursor-grabbing"
             onMouseDown={(e) => handleKnobMouseDown(e, 'rotation')}
           >
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
@@ -451,20 +450,20 @@ const Controls = ({
         </div>
 
         {/* Scale Knob Frame */}
-        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center">
+        <div className="w-[195px] h-[190px] bg-white rounded-[6px] relative flex items-center justify-center flex-shrink-0">
           <svg 
             xmlns="http://www.w3.org/2000/svg" 
             width="164" 
             height="149" 
             viewBox="0 0 164 149" 
             fill="none" 
-            className="absolute cursor-pointer"
+            className="absolute top-4 cursor-grab active:cursor-grabbing"
             onMouseDown={(e) => handleKnobMouseDown(e, 'scale')}
           >
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="black" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
             {/* Rotating inner dial group */}
-            <g transform={`rotate(${scaleRotation} 84 82)`} className="transition-transform duration-150">
+            <g transform={`rotate(${frequencyRotation} 84 82)`} className="transition-transform duration-150">
               <circle cx="84" cy="82" r="51.4688" fill="url(#paint0_linear_35_318_3)"/>
               <circle cx="84" cy="82" r="52.0406" stroke="url(#paint1_radial_35_318_3)" strokeOpacity="0.8" strokeWidth="1.14375"/>
               <g filter="url(#filter0_f_35_318_3)">

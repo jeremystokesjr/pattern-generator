@@ -1,16 +1,22 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
 const ImagePlaceholder = ({ uploadedImage, onImageUpload }) => {
+  const [isProcessing, setIsProcessing] = useState(false)
   const fileInputRef = useRef(null)
 
   const handleClick = () => {
     fileInputRef.current?.click()
   }
 
-  const handleFileSelect = (e) => {
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0]
     if (file && file.type.startsWith('image/')) {
-
+      setIsProcessing(true)
+      try {
+        await onImageUpload(file)
+      } finally {
+        setIsProcessing(false)
+      }
     } else {
       alert('Please select an image file')
     }
@@ -43,7 +49,12 @@ const ImagePlaceholder = ({ uploadedImage, onImageUpload }) => {
         
         {/* Main Content Area */}
         <div className="w-full flex-1 bg-[#E0E0E0] rounded-b-md flex items-center justify-center relative">
-          {uploadedImage ? (
+          {isProcessing ? (
+            /* Processing Indicator */
+            <div className="w-8 h-8 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-black"></div>
+            </div>
+          ) : uploadedImage ? (
             <img
               src={uploadedImage.src}
               alt="Uploaded"

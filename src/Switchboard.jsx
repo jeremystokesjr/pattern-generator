@@ -11,7 +11,7 @@ const Switchboard = ({
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
-  onTintChange 
+  onTintChange
 }) => {
   return (
     <Controls 
