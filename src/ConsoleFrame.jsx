@@ -32,7 +32,7 @@ const ConsoleFrame = ({
   }, [uploadedImage, tint, patternType, frequency, rotation, scale])
 
   // Generate pattern based on pattern type
-  const generatePattern = (ctx, width, height) => {
+  const generatePattern = async (ctx, width, height) => {
     // Set background
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, width, height)
@@ -46,7 +46,7 @@ const ConsoleFrame = ({
         generateBumpPattern(ctx, width, height)
         break
       case 'contour':
-        generateContourPattern(ctx, width, height)
+        await generateContourPattern(ctx, width, height)
         break
       default:
         generateWavePattern(ctx, width, height)
@@ -114,96 +114,202 @@ const ConsoleFrame = ({
     }
   }
 
-  // Contour pattern generation - Simple with just shape from metadata
-  const generateContourPattern = (ctx, width, height) => {
+  // Contour pattern generation using P5.js for authentic noise
+  const generateContourPattern = async (ctx, width, height) => {
     // Set background to black
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, width, height)
     
-    // Get shape from metadata (simple)
-    let shape = 'circle' // default
-    if (imageMetadata && imageMetadata.lensType) {
-      const lens = imageMetadata.lensType.toLowerCase()
-      if (lens.includes('front')) shape = 'circle'
-      else if (lens.includes('wide')) shape = 'rectangle'
-      else if (lens.includes('telephoto')) shape = 'triangle'
-    }
-    
-    // Get density from ISO (simple)
-    let spacing = 8 // default
-    if (imageMetadata && imageMetadata.iso) {
-      // Higher ISO = more dots (tighter spacing)
-      if (imageMetadata.iso > 800) spacing = 4
-      else if (imageMetadata.iso > 400) spacing = 6
-      else if (imageMetadata.iso > 200) spacing = 8
-      else spacing = 10
-    }
-    
-    // Get orientation adjustment (simple)
-    let orientationAdjustment = 0 // default
-    if (imageMetadata && imageMetadata.orientation) {
-      // Portrait = 90 degrees, Landscape = 0 degrees
-      if (imageMetadata.orientation === 6 || imageMetadata.orientation === 8) {
-        orientationAdjustment = Math.PI / 2 // 90 degrees for portrait
-      }
-    }
-    
-    // Get sharpness from flash (simple)
-    let sharpness = 1 // default (sharp)
-    if (imageMetadata && imageMetadata.flash !== undefined) {
-      // Flash on = blur, Flash off = sharp
-      sharpness = imageMetadata.flash ? 0.4 : 1
-    }
-    
-    // Set style
-    ctx.fillStyle = tint || '#ffffff'
-    
-    // Create simple contour lines with shapes
-    const centerX = width / 2
-    const centerY = height / 2
-    const maxRadius = Math.min(width, height) / 2 - 20
-    
-    // Draw 4 contour levels
-    for (let level = 0; level < 4; level++) {
-      const t = level / 3
-      const baseRadius = 30 + t * (maxRadius - 30)
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
       
-      // Draw shapes along the contour with ISO-based spacing
-      const points = 60
-      for (let i = 0; i < points; i += spacing) {
-        const angle = (i / points) * Math.PI * 2 + rotation * Math.PI / 180 + orientationAdjustment
-        const variation = Math.sin(angle * 3) * 8
-        const radius = baseRadius + variation
-        
-        const x = centerX + Math.cos(angle) * radius
-        const y = centerY + Math.sin(angle) * radius
-        
-        // Apply sharpness/blur effect
-        if (sharpness < 1) {
-          ctx.globalAlpha = sharpness
+      // Create P5.js sketch for contour pattern
+      const sketch = (p) => {
+        let settings = {
+          spacing: 4,
+          shapeSize: 1.2,
+          noiseScale: 0.02,
+          contourSpacing: 8
         }
-        
-        // Draw the shape
-        if (shape === 'circle') {
-          ctx.beginPath()
-          ctx.arc(x, y, 3, 0, Math.PI * 2)
-          ctx.fill()
-        } else if (shape === 'rectangle') {
-          ctx.fillRect(x - 3, y - 3, 6, 6)
-        } else if (shape === 'triangle') {
-          ctx.beginPath()
-          ctx.moveTo(x, y - 3)
-          ctx.lineTo(x - 3, y + 3)
-          ctx.lineTo(x + 3, y + 3)
-          ctx.closePath()
-          ctx.fill()
+        let time = 0
+        let animationSpeed = 0.005
+
+        p.setup = function() {
+          const canvas = p.createCanvas(width, height)
+          p.colorMode(p.HSB, 360, 100, 100, 100)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42) // Fixed seed for consistency
+          p.noiseSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToShapeContourSettings()
         }
-        
-        // Reset alpha
-        if (sharpness < 1) {
-          ctx.globalAlpha = 1
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Update time for animation
+          time += animationSpeed
+          
+          // Draw contour lines made of shapes
+          drawShapeContours()
+        }
+
+        function mapMetadataToShapeContourSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+          }
+          
+          // Map ISO to spacing (higher ISO = denser shapes)
+          const iso = imageMetadata?.iso || 200
+          settings.spacing = Math.max(2, Math.min(6, 4 - (iso / 400)))
+          
+          // Map ISO to shape size
+          settings.shapeSize = Math.max(0.8, Math.min(2.0, 1.2 + (iso / 800)))
+          
+          // Map ISO to noise scale and other settings
+          settings.noiseScale = Math.max(0.01, Math.min(0.04, 0.02 + (iso / 15000)))
+          animationSpeed = Math.max(0.002, Math.min(0.008, 0.005 + (iso / 12000)))
+          
+          // Store shape for use in drawShapeContours
+          p.shapeType = shape
+        }
+
+        function drawShapeContours() {
+          // Create proper contour lines using shapes at specific elevation levels
+          for (let elevation = 0; elevation < 1; elevation += 0.2) {
+            p.noStroke()
+            p.fill(0, 0, 100, 90) // White shapes
+            
+            // Create a grid to sample elevation data
+            const gridSize = 6
+            const cols = Math.floor(p.width / gridSize) + 1
+            const rows = Math.floor(p.height / gridSize) + 1
+            
+            // Create elevation grid
+            let elevationGrid = []
+            for (let x = 0; x < cols; x++) {
+              elevationGrid[x] = []
+              for (let y = 0; y < rows; y++) {
+                const baseX = x * gridSize
+                const baseY = y * gridSize
+                
+                const noiseX = baseX * settings.noiseScale
+                const noiseY = baseY * settings.noiseScale
+                
+                // Add warping
+                const warpX = p.noise(noiseX + 2000, noiseY + 2000, time * 0.1) * 2 - 1
+                const warpY = p.noise(noiseX + 3000, noiseY + 3000, time * 0.1) * 2 - 1
+                
+                elevationGrid[x][y] = {
+                  x: baseX + warpX,
+                  y: baseY + warpY,
+                  elevation: p.noise(noiseX, noiseY, time * 0.3)
+                }
+              }
+            }
+            
+            // Find contour line segments using marching squares approach
+            for (let x = 0; x < cols - 1; x++) {
+              for (let y = 0; y < rows - 1; y++) {
+                const p1 = elevationGrid[x][y]
+                const p2 = elevationGrid[x + 1][y]
+                const p3 = elevationGrid[x + 1][y + 1]
+                const p4 = elevationGrid[x][y + 1]
+                
+                // Check each edge of the square for contour intersections
+                const edges = [
+                  {p1: p1, p2: p2}, // top edge
+                  {p1: p2, p2: p3}, // right edge
+                  {p1: p3, p2: p4}, // bottom edge
+                  {p1: p4, p2: p1}  // left edge
+                ]
+                
+                edges.forEach(edge => {
+                  const e1 = edge.p1.elevation
+                  const e2 = edge.p2.elevation
+                  
+                  // Check if contour line crosses this edge
+                  if ((e1 < elevation && e2 >= elevation) || (e1 >= elevation && e2 < elevation)) {
+                    // Calculate intersection point
+                    const t = (elevation - e1) / (e2 - e1)
+                    const ix = edge.p1.x + t * (edge.p2.x - edge.p1.x)
+                    const iy = edge.p1.y + t * (edge.p2.y - edge.p1.y)
+                    
+                    // Draw shape at the intersection point
+                    drawShape(ix, iy, settings.shapeSize, p.shapeType)
+                  }
+                })
+              }
+            }
+          }
+        }
+
+        function drawShape(x, y, size, shapeType) {
+          switch (shapeType) {
+            case 'circle':
+              p.ellipse(x, y, size, size)
+              break
+            case 'rectangle':
+              p.rect(x - size/2, y - size/2, size, size)
+              break
+            case 'triangle':
+              p.triangle(x, y - size/2, x - size/2, y + size/2, x + size/2, y + size/2)
+              break
+          }
         }
       }
+      
+      // Create and run the P5.js sketch
+      const p5Instance = new p5(sketch, canvasRef.current)
+      
+      // Wait for the sketch to render
+      setTimeout(() => {
+        // Copy P5.js canvas to our main canvas
+        const p5Canvas = p5Instance.canvas
+        ctx.drawImage(p5Canvas, 0, 0, width, height)
+        
+        // Clean up P5.js instance
+        p5Instance.remove()
+      }, 100)
+      
+    } catch (error) {
+      console.error('Error loading P5.js:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
+    }
+  }
+
+  // Helper function to draw shapes
+  const drawShape = (ctx, x, y, size, shapeType) => {
+    switch (shapeType) {
+      case 'circle':
+        ctx.beginPath()
+        ctx.arc(x, y, size, 0, Math.PI * 2)
+        ctx.fill()
+        break
+      case 'rectangle':
+        ctx.fillRect(x - size/2, y - size/2, size, size)
+        break
+      case 'triangle':
+        ctx.beginPath()
+        ctx.moveTo(x, y - size/2)
+        ctx.lineTo(x - size/2, y + size/2)
+        ctx.lineTo(x + size/2, y + size/2)
+        ctx.closePath()
+        ctx.fill()
+        break
     }
   }
 
