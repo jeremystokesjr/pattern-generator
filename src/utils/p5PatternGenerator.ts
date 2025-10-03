@@ -70,6 +70,9 @@ export const createP5Sketch = async (
     p.setup = () => {
       console.log('P5 setup called, container size:', container.clientWidth, container.clientHeight);
       
+      // Set frame rate for better performance
+      p.frameRate(30); // Limit to 30 FPS for better performance
+      
       // Get container dimensions with multiple fallback strategies
       let width = 0;
       let height = 0;
@@ -177,11 +180,20 @@ export const createP5Sketch = async (
           console.log('Drawing sinusoidal waves');
           drawSinusoidalWaves(p, time, params);
         } else if (params.patternType === 'bump') {
-          console.log('Drawing static contours');
-          drawStaticContours(p, time, params);
+          console.log('Drawing flowing dot field');
+          drawFlowingDotField(p, time, params);
         } else if (params.patternType === 'contour') {
           console.log('Drawing shape contours');
           drawShapeContours(p, time, params);
+        } else if (params.patternType === 'bouncing') {
+          console.log('Drawing bouncing animation');
+          drawBouncingAnimation(p, time, params);
+        } else if (params.patternType === 'static') {
+          console.log('Drawing static contours');
+          drawStaticContours(p, time, params);
+        } else if (params.patternType === 'topographic') {
+          console.log('Drawing topographic lines');
+          drawTopographicLines(p, time, params);
         } else {
           console.log('Drawing default streams and particles - patternType was:', params.patternType);
           // Default behavior for other patterns - draw streams and particles
@@ -1085,6 +1097,9 @@ export const mapMetadataToP5Params = (metadata: ImageMetadata, seed?: number): P
   const alignment = mapOrientationToAlignment(metadata.orientation);
   const sharpness = mapFlashToSharpness(metadata.flash);
   
+  // Automatic pattern type selection based on metadata
+  const patternType = mapMetadataToPatternType(metadata);
+  
   // P5.js specific parameters
   const flowIntensity = mapMetadataToFlowIntensity(metadata);
   const organicCurves = mapMetadataToOrganicCurves(metadata);
@@ -1098,7 +1113,8 @@ export const mapMetadataToP5Params = (metadata: ImageMetadata, seed?: number): P
   // Advanced P5.js parameters
   const noiseScale = 0.01 + (metadata.iso ? metadata.iso / 20000 : 0.01);
   const noiseSpeed = 1 + (metadata.iso ? metadata.iso / 1000 : 1);
-  const particleCount = Math.floor(100 + (metadata.iso ? metadata.iso / 10 : 100));
+  // Optimize particle count for performance (reduce for better performance)
+  const particleCount = Math.floor(50 + (metadata.iso ? metadata.iso / 20 : 50));
   const streamCount = 3 + (metadata.flash ? 2 : 0);
   const turbulence = 0.5 + (metadata.iso ? metadata.iso / 2000 : 0.5);
   const colorShift = metadata.flash ? 2 : 0.5;
@@ -1125,6 +1141,7 @@ export const mapMetadataToP5Params = (metadata: ImageMetadata, seed?: number): P
     turbulence,
     colorShift,
     glowIntensity,
+    patternType,
     // Additional parameters
     iso: metadata.iso,
     season: metadata.season,
@@ -1246,5 +1263,76 @@ function mapMetadataToMotionBlur(metadata: ImageMetadata): number {
   if (metadata.iso && metadata.iso > 800) blur += 0.3;
   else if (metadata.iso && metadata.iso > 400) blur += 0.1;
   return Math.min(1.0, blur);
+}
+
+function mapMetadataToPatternType(metadata: ImageMetadata): string {
+  // Pattern selection based on camera and settings
+  if (metadata.lensType) {
+    const lensLower = metadata.lensType.toLowerCase();
+    
+    // Ultra Wide lens - flowing, organic patterns
+    if (lensLower.includes('ultra wide')) {
+      return 'wave'; // Sinusoidal waves work well for wide field of view
+    }
+    
+    // Telephoto lens - detailed, structured patterns
+    if (lensLower.includes('telephoto')) {
+      return 'topographic'; // Topographic lines for detailed telephoto shots
+    }
+    
+    // Front camera - simple, clean patterns
+    if (lensLower.includes('front')) {
+      return 'bouncing'; // Bouncing animation for selfies
+    }
+    
+    // Wide lens - balanced patterns
+    if (lensLower.includes('wide')) {
+      return 'contour'; // Default to contours for wide shots
+    }
+  }
+  
+  // Pattern selection based on ISO (image quality/noise)
+  if (metadata.iso) {
+    if (metadata.iso <= 100) {
+      return 'wave'; // Clean, smooth patterns for low ISO
+    } else if (metadata.iso <= 400) {
+      return 'contour'; // Balanced patterns for medium ISO
+    } else {
+      return 'static'; // Static patterns for high ISO/noisy images
+    }
+  }
+  
+  // Pattern selection based on flash usage
+  if (metadata.flash) {
+    return 'bouncing'; // Dynamic patterns for flash-lit images
+  }
+  
+  // Pattern selection based on time of day
+  if (metadata.timeOfDay) {
+    if (metadata.timeOfDay === 'night') {
+      return 'static'; // Static patterns for night shots
+    } else {
+      return 'wave'; // Flowing patterns for day shots
+    }
+  }
+  
+  // Pattern selection based on season
+  if (metadata.season) {
+    switch (metadata.season) {
+      case 'spring':
+        return 'wave'; // Flowing, organic patterns for spring
+      case 'summer':
+        return 'bouncing'; // Dynamic patterns for summer
+      case 'autumn':
+        return 'topographic'; // Structured patterns for autumn
+      case 'winter':
+        return 'static'; // Static patterns for winter
+      default:
+        return 'contour';
+    }
+  }
+  
+  // Default fallback
+  return 'contour';
 }
 

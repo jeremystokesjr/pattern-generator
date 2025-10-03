@@ -29,37 +29,6 @@ const ConsoleFrame = ({
     
     // Generate pattern based on pattern type
     generatePattern(ctx, canvas.width, canvas.height)
-    
-    // If we have an uploaded image, draw it centered
-    if (uploadedImage) {
-      const canvasWidth = canvas.width
-      const canvasHeight = canvas.height
-      const imageWidth = uploadedImage.width
-      const imageHeight = uploadedImage.height
-      
-      // Calculate scaling to fit image in canvas while maintaining aspect ratio
-      const scaleX = canvasWidth / imageWidth
-      const scaleY = canvasHeight / imageHeight
-      const scale = Math.min(scaleX, scaleY) * 0.8 // 0.8 to leave some padding
-      
-      const scaledWidth = imageWidth * scale
-      const scaledHeight = imageHeight * scale
-      
-      // Center the image
-      const x = (canvasWidth - scaledWidth) / 2
-      const y = (canvasHeight - scaledHeight) / 2
-      
-      // Apply tint if specified
-      if (tint) {
-        ctx.fillStyle = tint
-        ctx.globalCompositeOperation = 'multiply'
-        ctx.fillRect(0, 0, canvasWidth, canvasHeight)
-        ctx.globalCompositeOperation = 'source-over'
-      }
-      
-      // Draw the image
-      ctx.drawImage(uploadedImage, x, y, scaledWidth, scaledHeight)
-    }
   }, [uploadedImage, tint, patternType, frequency, rotation, scale])
 
   // Generate pattern based on pattern type
@@ -145,24 +114,96 @@ const ConsoleFrame = ({
     }
   }
 
-  // Contour pattern generation
+  // Contour pattern generation - Simple with just shape from metadata
   const generateContourPattern = (ctx, width, height) => {
-    const spacing = 25 * scale
-    const lineWidth = 1
+    // Set background to black
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, width, height)
     
-    ctx.strokeStyle = tint || '#ffffff'
-    ctx.lineWidth = lineWidth
+    // Get shape from metadata (simple)
+    let shape = 'circle' // default
+    if (imageMetadata && imageMetadata.lensType) {
+      const lens = imageMetadata.lensType.toLowerCase()
+      if (lens.includes('front')) shape = 'circle'
+      else if (lens.includes('wide')) shape = 'rectangle'
+      else if (lens.includes('telephoto')) shape = 'triangle'
+    }
     
-    // Draw contour lines
-    for (let y = spacing; y < height; y += spacing) {
-      ctx.beginPath()
-      ctx.moveTo(0, y)
-      
-      for (let x = 0; x < width; x += 5) {
-        const offset = Math.sin(x * frequency * 0.01 + rotation * Math.PI / 180) * 15
-        ctx.lineTo(x, y + offset)
+    // Get density from ISO (simple)
+    let spacing = 8 // default
+    if (imageMetadata && imageMetadata.iso) {
+      // Higher ISO = more dots (tighter spacing)
+      if (imageMetadata.iso > 800) spacing = 4
+      else if (imageMetadata.iso > 400) spacing = 6
+      else if (imageMetadata.iso > 200) spacing = 8
+      else spacing = 10
+    }
+    
+    // Get orientation adjustment (simple)
+    let orientationAdjustment = 0 // default
+    if (imageMetadata && imageMetadata.orientation) {
+      // Portrait = 90 degrees, Landscape = 0 degrees
+      if (imageMetadata.orientation === 6 || imageMetadata.orientation === 8) {
+        orientationAdjustment = Math.PI / 2 // 90 degrees for portrait
       }
-      ctx.stroke()
+    }
+    
+    // Get sharpness from flash (simple)
+    let sharpness = 1 // default (sharp)
+    if (imageMetadata && imageMetadata.flash !== undefined) {
+      // Flash on = blur, Flash off = sharp
+      sharpness = imageMetadata.flash ? 0.4 : 1
+    }
+    
+    // Set style
+    ctx.fillStyle = tint || '#ffffff'
+    
+    // Create simple contour lines with shapes
+    const centerX = width / 2
+    const centerY = height / 2
+    const maxRadius = Math.min(width, height) / 2 - 20
+    
+    // Draw 4 contour levels
+    for (let level = 0; level < 4; level++) {
+      const t = level / 3
+      const baseRadius = 30 + t * (maxRadius - 30)
+      
+      // Draw shapes along the contour with ISO-based spacing
+      const points = 60
+      for (let i = 0; i < points; i += spacing) {
+        const angle = (i / points) * Math.PI * 2 + rotation * Math.PI / 180 + orientationAdjustment
+        const variation = Math.sin(angle * 3) * 8
+        const radius = baseRadius + variation
+        
+        const x = centerX + Math.cos(angle) * radius
+        const y = centerY + Math.sin(angle) * radius
+        
+        // Apply sharpness/blur effect
+        if (sharpness < 1) {
+          ctx.globalAlpha = sharpness
+        }
+        
+        // Draw the shape
+        if (shape === 'circle') {
+          ctx.beginPath()
+          ctx.arc(x, y, 3, 0, Math.PI * 2)
+          ctx.fill()
+        } else if (shape === 'rectangle') {
+          ctx.fillRect(x - 3, y - 3, 6, 6)
+        } else if (shape === 'triangle') {
+          ctx.beginPath()
+          ctx.moveTo(x, y - 3)
+          ctx.lineTo(x - 3, y + 3)
+          ctx.lineTo(x + 3, y + 3)
+          ctx.closePath()
+          ctx.fill()
+        }
+        
+        // Reset alpha
+        if (sharpness < 1) {
+          ctx.globalAlpha = 1
+        }
+      }
     }
   }
 
