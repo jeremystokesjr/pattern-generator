@@ -212,6 +212,16 @@ function App() {
         </div>
         
         {/* Footer */}
+        <div className="mt-8 text-center">
+          <a 
+            href="https://www.jeremy-stokes.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-white transition-colors duration-200 text-sm font-medium font-inter"
+          >
+            Made by Jeremy Stokes
+          </a>
+        </div>
         
       </div>
     </div>

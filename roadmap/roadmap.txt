@@ -6,6 +6,7 @@
 Ideas
 - Explore sound fx 
 - Additional generation methods
+- Make it compatible for touch
 
 
 Bug Fixes
