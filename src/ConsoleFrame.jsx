@@ -23,7 +23,9 @@ const ConsoleFrame = ({
   onAnimationSpeedChange,
   onImageRemove,
   onCartridgeInserted,
-  onEject
+  onEject,
+  onDragOver: onDragOverProp,
+  onDragLeave: onDragLeaveProp
 }) => {
   const canvasRef = useRef(null)
   const contourP5InstanceRef = useRef(null)
@@ -32,22 +34,26 @@ const ConsoleFrame = ({
   const [isDragOver, setIsDragOver] = useState(false)
   const [showInsertedCartridge, setShowInsertedCartridge] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [shouldGeneratePatterns, setShouldGeneratePatterns] = useState(false)
 
   // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
     setIsDragOver(true)
+    onDragOverProp()
   }
 
   const handleDragLeave = (e) => {
     e.preventDefault()
     setIsDragOver(false)
+    onDragLeaveProp()
   }
 
   const handleDrop = (e) => {
     e.preventDefault()
     setIsDragOver(false)
+    onDragLeaveProp()
     
     const data = e.dataTransfer.getData('text/plain')
     console.log('Drop data:', data)
@@ -57,10 +63,13 @@ const ConsoleFrame = ({
       setIsLoading(true)
       console.log('showInsertedCartridge set to true')
       
-      // Simulate loading time (2 seconds) then trigger cartridge insertion
+      // Immediately trigger cartridge insertion to hide upload area
+      onCartridgeInserted()
+      
+      // Simulate loading time (2 seconds) then allow pattern generation
       setTimeout(() => {
         setIsLoading(false)
-        onCartridgeInserted()
+        setShouldGeneratePatterns(true)
       }, 2000)
     }
   }
@@ -68,7 +77,9 @@ const ConsoleFrame = ({
   const handleEjectClick = () => {
     console.log('Eject button clicked!')
     setShowInsertedCartridge(false)
+    setShouldGeneratePatterns(false)
     onEject()
+    console.log('Eject completed - isCartridgeInserted should be false now')
   }
 
   // Sync inserted cartridge state with prop
@@ -79,6 +90,7 @@ const ConsoleFrame = ({
   // Cleanup function for contour pattern
   const cleanupContourPattern = () => {
     if (contourP5InstanceRef.current) {
+      console.log('Cleaning up contour pattern')
       contourP5InstanceRef.current.remove()
       contourP5InstanceRef.current = null
     }
@@ -87,6 +99,7 @@ const ConsoleFrame = ({
   // Cleanup function for bump pattern
   const cleanupBumpPattern = () => {
     if (bumpP5InstanceRef.current) {
+      console.log('Cleaning up bump pattern')
       bumpP5InstanceRef.current.remove()
       bumpP5InstanceRef.current = null
     }
@@ -95,6 +108,7 @@ const ConsoleFrame = ({
   // Cleanup function for wave pattern
   const cleanupWavePattern = () => {
     if (waveP5InstanceRef.current) {
+      console.log('Cleaning up wave pattern')
       waveP5InstanceRef.current.remove()
       waveP5InstanceRef.current = null
     }
@@ -102,6 +116,7 @@ const ConsoleFrame = ({
 
   // Cleanup all patterns
   const cleanupAllPatterns = () => {
+    console.log('Cleaning up all patterns')
     cleanupContourPattern()
     cleanupBumpPattern()
     cleanupWavePattern()
@@ -113,11 +128,13 @@ const ConsoleFrame = ({
 
     const ctx = canvas.getContext('2d')
     
+    console.log('Pattern generation useEffect triggered - isCartridgeInserted:', isCartridgeInserted, 'shouldGeneratePatterns:', shouldGeneratePatterns)
+    
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // Only generate patterns if cartridge is inserted
-    if (isCartridgeInserted) {
+    // Only generate patterns if cartridge is inserted AND loading is complete
+    if (isCartridgeInserted && shouldGeneratePatterns) {
       // Special handling for animated patterns - continuous animation
       if (patternType === 'contour') {
         // Clean up any existing patterns
@@ -142,12 +159,13 @@ const ConsoleFrame = ({
       }
     } else {
       // Clean up any existing patterns when cartridge is not inserted
+      console.log('Cartridge not inserted - cleaning up all patterns')
       cleanupAllPatterns()
     }
     
     // Cleanup on unmount or pattern change
     return cleanupAllPatterns
-  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed, isCartridgeInserted])
+  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed, isCartridgeInserted, shouldGeneratePatterns])
 
   // Continuous contour pattern generation
   const generateContourPatternContinuous = async (ctx, width, height) => {
@@ -1935,7 +1953,7 @@ const ConsoleFrame = ({
             <div className="absolute top-[70px] right-2 flex flex-col justify-between h-[277px]">
               {/* Eject Icon - Drop Target */}
         <div 
-          className={`w-6 h-6 flex items-center justify-center cursor-pointer transition-all duration-200 ${
+          className={`w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-200 ${
             isDragOver ? 'bg-[#FF9966] bg-opacity-30 rounded' : ''
           }`}
           onDragOver={handleDragOver}
@@ -1943,11 +1961,11 @@ const ConsoleFrame = ({
           onDrop={handleDrop}
           onClick={isCartridgeInserted ? handleEjectClick : undefined}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="19" viewBox="0 0 26 19" fill="none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="19" viewBox="0 0 26 19" fill="none">
             <path d="M0 16H26V19H0V16Z" fill={isCartridgeInserted ? "#FFFFFF" : "#FFFFFF"} fillOpacity={isCartridgeInserted ? "1" : "0.3"}/>
             <path d="M13 0L25.9904 11.25H0.00961876L13 0Z" fill={isCartridgeInserted ? "#FFFFFF" : "#FFFFFF"} fillOpacity={isCartridgeInserted ? "1" : "0.3"}/>
-          </svg>
-        </div>
+                </svg>
+              </div>
               
               {/* Download Icon */}
               <div className="w-8 h-9 flex items-center justify-center cursor-pointer" onClick={handleDownload}>

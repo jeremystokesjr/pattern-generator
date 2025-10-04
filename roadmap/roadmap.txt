@@ -2,6 +2,12 @@
 
 
 ###
+
+Ideas
+- Explore sound fx 
+- Additional generation methods
+
+
 Bug Fixes
 
 UI / Craft
@@ -14,6 +20,8 @@ UI / Craft
 - fix the UI does not have padding on the right side (right edge of tint and speed dials)
 - fix jittieriness when the dials are rotated. The pattern seems to redraw each time the controls are changed, this should be smoother.
 - fix the change in positioning when the cartridge is added and removed from the system.
+- fix delay with upload area and cartridge still showing after the cartridge has been dropped in the console
+- fix keep console in the center of screen so there is no jump
 
 
 Upload

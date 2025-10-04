@@ -17,7 +17,7 @@ const ImagePlaceholder = ({ uploadedImage }) => {
 
   return (
     <div 
-      className={`w-[111px] h-[149px] inline-flex justify-center items-center gap-0.5 relative cursor-move transition-opacity duration-100 ${isDragging ? 'opacity-0' : 'opacity-100'}`}
+      className={`w-[111px] h-[149px] inline-flex justify-center items-center gap-0.5 relative cursor-move transition-all duration-200 ${isDragging ? 'opacity-0' : 'opacity-100'}`}
       style={{
         borderRadius: '6px',
         borderBottom: '4px solid #BA452C',

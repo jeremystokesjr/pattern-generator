@@ -12,6 +12,7 @@ function App() {
   const [isExtractingMetadata, setIsExtractingMetadata] = useState(false)
   const [isCartridgeInserted, setIsCartridgeInserted] = useState(false)
   const [isEjected, setIsEjected] = useState(false)
+  const [isDragOver, setIsDragOver] = useState(false)
   
   // State for control values
   const [patternType, setPatternType] = useState('wave') // 'wave', 'bump', 'contour'
@@ -161,6 +162,14 @@ function App() {
     console.log('Cartridge ejected')
   }
 
+  const handleDragOver = () => {
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragOver(false)
+  }
+
   // Handle background removal toggle
   const handleRemoveBackgroundChange = (value) => {
     setRemoveBackground(value)
@@ -171,7 +180,7 @@ function App() {
     <div className="min-h-screen bg-[#222222] p-8">
       <div className="max-w-7xl mx-auto">
         {/* Main Layout - Console and Upload Area */}
-        <div className="flex justify-center items-start gap-8">
+        <div className="flex justify-center items-center gap-8">
           <ConsoleFrame 
             uploadedImage={uploadedImage}
             imageMetadata={imageMetadata}
@@ -196,8 +205,10 @@ function App() {
             onRemoveBackgroundChange={handleRemoveBackgroundChange}
             onCartridgeInserted={handleCartridgeInserted}
             onEject={handleEject}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
           />
-          {!isCartridgeInserted && <UploadArea uploadedImage={uploadedImage} onImageUpload={handleImageUpload} />}
+          {!isCartridgeInserted && <UploadArea uploadedImage={uploadedImage} onImageUpload={handleImageUpload} isExtractingMetadata={isExtractingMetadata} />}
         </div>
         
         {/* Footer */}
