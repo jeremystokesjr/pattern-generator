@@ -10,6 +10,7 @@ function App() {
   const [uploadedImage, setUploadedImage] = useState(null)
   const [imageMetadata, setImageMetadata] = useState(null)
   const [isExtractingMetadata, setIsExtractingMetadata] = useState(false)
+  const [isCartridgeInserted, setIsCartridgeInserted] = useState(false)
   
   // State for control values
   const [patternType, setPatternType] = useState('wave') // 'wave', 'bump', 'contour'
@@ -141,7 +142,14 @@ function App() {
   const handleImageRemove = () => {
     setUploadedImage(null)
     setImageMetadata(null)
+    setIsCartridgeInserted(false)
     console.log('Image removed')
+  }
+
+  // Handle cartridge insertion
+  const handleCartridgeInserted = () => {
+    setIsCartridgeInserted(true)
+    console.log('Cartridge inserted')
   }
 
   // Handle background removal toggle
@@ -159,6 +167,7 @@ function App() {
             uploadedImage={uploadedImage}
             imageMetadata={imageMetadata}
             isExtractingMetadata={isExtractingMetadata}
+            isCartridgeInserted={isCartridgeInserted}
             patternType={patternType}
             frequency={frequency}
             rotation={rotation}
@@ -176,6 +185,7 @@ function App() {
             onAnimationSpeedChange={handleAnimationSpeedChange}
             onImageRemove={handleImageRemove}
             onRemoveBackgroundChange={handleRemoveBackgroundChange}
+            onCartridgeInserted={handleCartridgeInserted}
           />
           <UploadArea uploadedImage={uploadedImage} onImageUpload={handleImageUpload} />
         </div>
