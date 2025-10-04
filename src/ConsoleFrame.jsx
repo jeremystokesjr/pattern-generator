@@ -44,7 +44,7 @@ const ConsoleFrame = ({
     // Generate pattern based on type
     switch (patternType) {
       case 'wave':
-        generateWavePattern(ctx, width, height)
+        await generateWavePattern(ctx, width, height)
         break
       case 'bump':
         await generateBumpPattern(ctx, width, height)
@@ -57,45 +57,182 @@ const ConsoleFrame = ({
     }
   }
 
-  // Sinusoidal Waves pattern generation
-  const generateWavePattern = (ctx, width, height) => {
-    const numLayers = Math.max(1, Math.floor(scale * 3))
-    const layerSpacing = height / numLayers
+  // Sinusoidal Waves pattern generation using P5.js with metadata-driven shapes
+  const generateWavePattern = async (ctx, width, height) => {
+    // Set background to black
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, width, height)
     
-    for (let layer = 0; layer < numLayers; layer++) {
-      const baseY = layer * layerSpacing + layerSpacing / 2
-      const amplitude = 30 + layer * 10
-      const frequency = 0.01 + layer * 0.005
-      const phase = rotation * Math.PI / 180 + layer * 0.8
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
       
-      // Create multiple sine waves for complexity
-      ctx.strokeStyle = tint || `hsl(${(200 + layer * 40) % 360}, 70%, 80%)`
-      ctx.lineWidth = 1 + layer * 0.5
-      ctx.beginPath()
-      
-      for (let x = 0; x < width; x += 1) {
-        let waveY = baseY
-        
-        // Primary wave
-        waveY += Math.sin(x * frequency + phase) * amplitude
-        
-        // Secondary wave for organic curves
-        waveY += Math.sin(x * frequency * 2.3 + phase * 1.7) * amplitude * 0.3
-        
-        // Tertiary wave for fine detail
-        waveY += Math.sin(x * frequency * 4.7 + phase * 0.5) * amplitude * 0.1
-        
-        // Add noise-based variation
-        const noiseVariation = (Math.random() - 0.5) * 10
-        waveY += noiseVariation
-        
-        if (x === 0) {
-          ctx.moveTo(x, waveY)
-        } else {
-          ctx.lineTo(x, waveY)
+      // Create P5.js sketch for wave pattern
+      const sketch = (p) => {
+        let settings = {
+          numWaves: 8,
+          amplitude: 40,
+          frequency: 0.02,
+          shapeSpacing: 8,
+          shapeSize: 3,
+          waveSpacing: 60
+        }
+
+        p.setup = function() {
+          // Create larger canvas for zoom effect
+          const zoomFactor = zoom
+          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          p.colorMode(p.RGB, 255, 255, 255, 255)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToWaveSettings()
+        }
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Draw static wave pattern
+          drawWavePattern()
+        }
+
+        function mapMetadataToWaveSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+            else if (lens.includes('macro')) shape = 'rhombus'
+            else if (lens.includes('zoom')) shape = 'star'
+          }
+          p.shapeType = shape
+          
+          // Map ISO to shape density/spacing
+          const iso = imageMetadata?.iso || 200
+          settings.shapeSpacing = Math.max(4, Math.min(12, 8 - (iso / 200)))
+          
+          // Map aperture to wave amplitude (if available)
+          const aperture = imageMetadata?.aperture || 2.8
+          settings.amplitude = Math.max(20, Math.min(80, 40 + (aperture * 5)))
+          
+          // Map shutter speed to wave frequency (if available)
+          const shutterSpeed = imageMetadata?.shutterSpeed || 1/60
+          settings.frequency = Math.max(0.01, Math.min(0.05, 0.02 + (shutterSpeed * 0.1)))
+          
+          // Map flash to shape size
+          const flash = imageMetadata?.flash || false
+          settings.shapeSize = flash ? 4 : 3
+          
+          // Map ISO to number of waves
+          settings.numWaves = Math.max(6, Math.min(12, 8 + Math.floor(iso / 200)))
+        }
+
+        function drawWavePattern() {
+          // Calculate wave spacing
+          const totalWaveHeight = settings.numWaves * settings.waveSpacing
+          const startY = (p.height - totalWaveHeight) / 2 + settings.waveSpacing / 2
+          
+          // Draw each wave
+          for (let waveIndex = 0; waveIndex < settings.numWaves; waveIndex++) {
+            const baseY = startY + waveIndex * settings.waveSpacing
+            
+            // Draw shapes along the sinusoidal wave path
+            for (let x = 0; x < p.width; x += settings.shapeSpacing) {
+              // Calculate sinusoidal wave position
+              const waveY = baseY + Math.sin(x * settings.frequency + rotation * Math.PI / 180) * settings.amplitude
+              
+              // Set color to white
+              p.fill(255, 255, 255)
+              p.noStroke()
+              
+              // Draw shape at wave position
+              drawShape(x, waveY, settings.shapeSize)
+            }
+          }
+        }
+
+        function drawShape(x, y, size) {
+          switch (p.shapeType) {
+            case 'circle':
+              p.ellipse(x, y, size)
+              break
+            case 'rectangle':
+              p.rect(x - size/2, y - size/2, size, size)
+              break
+            case 'triangle':
+              p.triangle(
+                x, y - size,
+                x - size, y + size,
+                x + size, y + size
+              )
+              break
+            case 'rhombus':
+              p.beginShape()
+              p.vertex(x, y - size)
+              p.vertex(x - size, y)
+              p.vertex(x, y + size)
+              p.vertex(x + size, y)
+              p.endShape(p.CLOSE)
+              break
+            case 'star':
+              drawStar(x, y, size)
+              break
+          }
+        }
+
+        function drawStar(x, y, size) {
+          const spikes = 5
+          const outerRadius = size
+          const innerRadius = size * 0.4
+          
+          p.beginShape()
+          for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const angle = (i * p.PI) / spikes
+            const px = x + p.cos(angle) * radius
+            const py = y + p.sin(angle) * radius
+            p.vertex(px, py)
+          }
+          p.endShape(p.CLOSE)
         }
       }
-      ctx.stroke()
+      
+      // Create and run the P5.js sketch
+      const p5Instance = new p5(sketch, canvasRef.current)
+      
+      // Wait for the sketch to render
+      setTimeout(() => {
+        // Copy P5.js canvas to our main canvas with zoom in effect
+        const p5Canvas = p5Instance.canvas
+        const zoomFactor = zoom
+        
+        // Show only the center portion of the larger pattern (zoom in effect)
+        const sourceX = (p5Canvas.width - width) / 2
+        const sourceY = (p5Canvas.height - height) / 2
+        
+        // Draw only a portion of the larger canvas to our display canvas
+        ctx.drawImage(
+          p5Canvas, 
+          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
+          0, 0, width, height               // Destination: full display canvas
+        )
+        
+        // Clean up P5.js instance
+        p5Instance.remove()
+      }, 100)
+      
+    } catch (error) {
+      console.error('Error loading P5.js:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
     }
   }
 
