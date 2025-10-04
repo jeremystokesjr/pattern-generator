@@ -146,6 +146,18 @@ const ConsoleFrame = ({
         }
 
         function drawWavePattern() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
           // Calculate wave spacing
           const totalWaveHeight = settings.numWaves * settings.waveSpacing
           const startY = (p.height - totalWaveHeight) / 2 + settings.waveSpacing / 2
@@ -156,8 +168,8 @@ const ConsoleFrame = ({
             
             // Draw shapes along the sinusoidal wave path
             for (let x = 0; x < p.width; x += settings.shapeSpacing) {
-              // Calculate sinusoidal wave position
-              const waveY = baseY + Math.sin(x * settings.frequency + rotation * Math.PI / 180) * settings.amplitude
+              // Calculate sinusoidal wave position (no rotation in wave phase)
+              const waveY = baseY + Math.sin(x * settings.frequency) * settings.amplitude
               
               // Apply tinting to white base color
               if (tint && tint !== '#FFFFFF') {
@@ -182,6 +194,9 @@ const ConsoleFrame = ({
               drawShape(x, waveY, settings.shapeSize)
             }
           }
+          
+          // Restore the transformation matrix
+          p.pop()
         }
 
         function drawShape(x, y, size) {
@@ -361,6 +376,18 @@ const ConsoleFrame = ({
         }
 
         function drawBumpPattern() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
           particles.forEach(particle => {
             // Apply Perlin noise displacement for 3D bump effect
             const noiseX = p.noise(particle.baseX * settings.noiseScale, particle.baseY * settings.noiseScale, time)
@@ -401,6 +428,9 @@ const ConsoleFrame = ({
             // Draw shape
             drawShape(particle)
           })
+          
+          // Restore the transformation matrix
+          p.pop()
         }
 
         function drawShape(particle) {
@@ -782,6 +812,18 @@ const ConsoleFrame = ({
         }
 
         function drawShapeContours() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
           // Create proper contour lines using shapes at specific elevation levels
           for (let elevation = 0; elevation < 1; elevation += 0.2) {
             p.noStroke()
@@ -875,6 +917,9 @@ const ConsoleFrame = ({
               }
             }
           }
+          
+          // Restore the transformation matrix
+          p.pop()
         }
 
         function drawShape(x, y, size, shapeType) {

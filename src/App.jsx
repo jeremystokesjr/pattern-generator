@@ -12,9 +12,9 @@ function App() {
   const [isExtractingMetadata, setIsExtractingMetadata] = useState(false)
   
   // State for control values
-  const [patternType, setPatternType] = useState('contour') // 'wave', 'bump', 'contour'
+  const [patternType, setPatternType] = useState('wave') // 'wave', 'bump', 'contour'
   const [frequency, setFrequency] = useState(3)
-  const [rotation, setRotation] = useState(0)
+  const [rotation, setRotation] = useState(0) // Test: 0° = normal, -90° = left, +90° = right, -180°/+180° = full rotation
   const [scale, setScale] = useState(1)
   const [tint, setTint] = useState('#FFFFFF') // white for no tint, or color value
   const [removeBackground, setRemoveBackground] = useState(false) // background removal toggle
