@@ -787,19 +787,31 @@ const ConsoleFrame = ({
             p.noStroke()
             
             // Apply tinting to white base color
-            const baseColor = p.color(255, 255, 255, 255)
-            const tintedColor = applyTintToColor(baseColor, tint)
-            
-            // Convert tinted color to HSB for p5.js
-            p.colorMode(p.RGB, 255, 255, 255, 255)
-            const rgbColor = p.color(tintedColor.levels[0], tintedColor.levels[1], tintedColor.levels[2])
-            p.colorMode(p.HSB, 360, 100, 100, 100)
-            
-            const hue = p.hue(rgbColor)
-            const saturation = p.saturation(rgbColor)
-            const brightness = p.brightness(rgbColor)
-            
-            p.fill(hue, saturation, brightness, 90)
+            if (tint && tint !== '#FFFFFF') {
+              // Convert tint color to RGB
+              const tintR = parseInt(tint.slice(1, 3), 16)
+              const tintG = parseInt(tint.slice(3, 5), 16)
+              const tintB = parseInt(tint.slice(5, 7), 16)
+              
+              // Blend white (255,255,255) with tint color using multiplication
+              const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+              const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+              const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+              
+              // Convert to HSB for p5.js
+              p.colorMode(p.RGB, 255, 255, 255, 255)
+              const rgbColor = p.color(blendedR, blendedG, blendedB)
+              p.colorMode(p.HSB, 360, 100, 100, 100)
+              
+              const hue = p.hue(rgbColor)
+              const saturation = p.saturation(rgbColor)
+              const brightness = p.brightness(rgbColor)
+              
+              p.fill(hue, saturation, brightness, 90)
+            } else {
+              // No tinting, use white
+              p.fill(0, 0, 100, 90) // White in HSB
+            }
             
             // Create a grid to sample elevation data
             const gridSize = 6
