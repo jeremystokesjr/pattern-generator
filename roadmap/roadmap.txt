@@ -60,6 +60,17 @@
 - Smooth animation so there is no jump when changing the color/tint
 - Add click on color selector to move the dial too
 
+## Bug Fixes Completed:
+- ✅ Fixed dial controls responsiveness issues (Version 5)
+  - Reduced throttling from 120fps to 60fps for better responsiveness
+  - Reduced rotation dial dead zone from 10px to 3px
+  - Added preventDefault() to mouse events to prevent browser interference
+  - Improved visual transition speed from 75ms to 50ms
+  - Enhanced event handling with proper stopPropagation()
+- ✅ Updated rotation dial range from 0°-360° to -180° to +180°
+- ✅ Ensured 0° is at 12 o'clock position (middle) for intuitive control
+- ✅ Improved rotation dial usability with dead zone and reduced sensitivity
+
 ## Recent Changes:
 - ✅ Renamed frequency knob to scale knob - now controls dot size instead of particle count
 - ✅ Updated UI labels and debug display to reflect scale control

@@ -68,6 +68,9 @@ const Controls = ({
 
   // Handle knob dragging
   const handleKnobMouseDown = (e, type) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
     setIsDragging(true)
     setDragType(type)
     setDragStart({ x: e.clientX, y: e.clientY })
@@ -96,9 +99,11 @@ const Controls = ({
   const handleMouseMove = (e) => {
     if (!isDragging) return
 
-    // Throttle updates to improve precision (max 120fps)
+    e.preventDefault() // Prevent browser interference
+
+    // Throttle updates to improve precision (max 60fps for better responsiveness)
     const now = Date.now()
-    if (now - lastUpdateTime < 8) return // ~120fps for smoother interaction
+    if (now - lastUpdateTime < 16) return // ~60fps for better responsiveness
     setLastUpdateTime(now)
 
     const deltaX = e.clientX - dragStart.x
@@ -137,8 +142,15 @@ const Controls = ({
         onScaleChange(Math.round(newValue * 10) / 10) // Round to 1 decimal, now controlling scale
         break
       case 'rotation':
-        newValue = (dragStartValue + deltaX * sensitivity) % 360
-        if (newValue < 0) newValue += 360
+        // Add small dead zone to prevent accidental tiny movements
+        const deadZone = 3
+        if (Math.abs(deltaX) < deadZone) return
+        
+        // Reduced sensitivity for more precise control
+        const rotationSensitivity = 0.15
+        newValue = dragStartValue + deltaX * rotationSensitivity
+        // Clamp to -180° to +180° range
+        newValue = Math.max(-180, Math.min(180, newValue))
         onRotationChange(Math.round(newValue))
         break
       case 'scale':
@@ -179,7 +191,8 @@ const Controls = ({
     }
   }
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
+    e.preventDefault() // Prevent browser interference
     setIsDragging(false)
     setDragType(null)
     
@@ -240,7 +253,7 @@ const Controls = ({
 
   // Calculate dial rotations based on current values
   const frequencyRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range) - now using scale
-  const rotationDialRotation = rotation // 0° to 360°
+  const rotationDialRotation = rotation // -180° to +180°, where 0° is at 12 o'clock
 
   useEffect(() => {
     if (isDragging) {
@@ -432,7 +445,7 @@ const Controls = ({
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
             {/* Rotating inner dial group */}
-            <g transform={`rotate(${rotationDialRotation} 84 82)`} className="transition-transform duration-150">
+            <g transform={`rotate(${rotationDialRotation} 84 82)`} className="transition-transform duration-50">
               <circle cx="84" cy="82" r="51.4688" fill="url(#paint0_linear_35_318_2)"/>
               <circle cx="84" cy="82" r="52.0406" stroke="url(#paint1_radial_35_318_2)" strokeOpacity="0.8" strokeWidth="1.14375"/>
               <g filter="url(#filter0_f_35_318_2)">
