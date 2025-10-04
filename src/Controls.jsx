@@ -205,16 +205,16 @@ const Controls = ({
   const colorValues = [
     '#FD0004', // 0% - Red
     '#E86615', // 16.67% - Orange  
-    '#FFFF00', // 33.33% - Yellow (fixed hex)
-    '#00FF1E', // 50% - Green
-    '#002AFF', // 66.67% - Blue
-    '#8015E8', // 83.33% - Purple
-    '#FF00D0'  // 100% - Pink
+    '#FFFF00', // 33.33% - Yellow
+    '#FFFFFF', // 50% - White (no tint)
+    '#00FF1E', // 66.67% - Green
+    '#002AFF', // 83.33% - Blue
+    '#8015E8'  // 100% - Purple
   ]
 
   // Get color index from tint value
   const getColorIndexFromTint = (tint) => {
-    if (!tint) return 3 // Default to green (middle)
+    if (!tint) return 3 // Default to white (middle)
     
     // Normalize the tint value
     const normalizedTint = tint.toUpperCase().replace('#', '')
@@ -222,6 +222,7 @@ const Controls = ({
     // Check against normalized color values
     const normalizedColorValues = colorValues.map(color => color.replace('#', ''))
     const index = normalizedColorValues.indexOf(normalizedTint)
+    
     
     return index >= 0 ? index : 3
   }
@@ -233,7 +234,9 @@ const Controls = ({
 
   // Calculate dial position based on current color
   const currentColorIndex = getColorIndexFromTint(tint)
+  // Account for dial height (35px) - position so center of dial aligns with color
   const dialPosition = (currentColorIndex / 6) * 100 // 0% to 100%
+  
 
   // Calculate dial rotations based on current values
   const frequencyRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range) - now using scale
@@ -344,13 +347,13 @@ const Controls = ({
           <div 
             className="w-[43px] h-[109px] rounded-[6px] shadow-inner cursor-pointer flex-shrink-0"
             style={{
-              background: 'linear-gradient(180deg, #FD0004 0%, #E86615 16.67%, #FC0 33.33%, #00FF1E 50%, #002AFF 66.67%, #8015E8 83.33%, #FF00D0 100%)'
+              background: 'linear-gradient(180deg, #FD0004 0%, #E86615 16.67%, #FFFF00 33.33%, #FFFFFF 50%, #00FF1E 66.67%, #002AFF 83.33%, #8015E8 100%)'
             }}
             onMouseDown={handleColorSliderMouseDown}
           >
             {/* Color Slider Dial */}
             <div 
-              className={`absolute left-1/2 transform -translate-x-1/2 z-10 cursor-pointer ${!isDragging ? 'transition-all duration-200' : ''}`}
+              className={`absolute left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 cursor-pointer ${!isDragging ? 'transition-all duration-200' : ''}`}
               style={{ top: `${dialPosition}%` }}
               onMouseDown={handleColorSliderMouseDown}
             >

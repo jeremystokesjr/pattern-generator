@@ -159,8 +159,10 @@ const ConsoleFrame = ({
               // Calculate sinusoidal wave position
               const waveY = baseY + Math.sin(x * settings.frequency + rotation * Math.PI / 180) * settings.amplitude
               
-              // Set color to white
-              p.fill(255, 255, 255)
+              // Apply tinting to white base color
+              const baseColor = p.color(255, 255, 255)
+              const tintedColor = applyTintToColor(baseColor, tint)
+              p.fill(tintedColor)
               p.noStroke()
               
               // Draw shape at wave position
@@ -365,8 +367,9 @@ const ConsoleFrame = ({
             const sizeMultiplier = p.map(elevation, 0, 1, 0.6, 1.4) // Smaller in valleys, larger on peaks
             particle.size = p.map(elevation, 0, 1, settings.dotMinSize, settings.dotMaxSize) * sizeMultiplier
             
-            // Use pure white for all shapes - no gray variation
-            particle.color = p.color(255, 255, 255, 255) // Pure white (#ffffff)
+            // Apply tinting to white base color
+            const baseColor = p.color(255, 255, 255, 255)
+            particle.color = applyTintToColor(baseColor, tint)
             
             // Draw shape
             drawShape(particle)
@@ -566,8 +569,20 @@ const ConsoleFrame = ({
               // Create dramatic brightness contrast for topographic effect - bright peaks, dark valleys
               const brightness = p.map(brightnessNoise, 0, 1, 10, 100)
               
-              // Use green color with dramatic brightness variation for topographic effect
-              p.fill(120, 80, brightness, 90) // Green hue, high saturation, variable brightness
+              // Apply tinting to white base color, then convert to HSB for topographic effect
+              const baseColor = p.color(255, 255, 255, 255)
+              const tintedColor = applyTintToColor(baseColor, tint)
+              
+              // Convert tinted color to HSB and apply brightness variation
+              p.colorMode(p.RGB, 255, 255, 255, 255)
+              const rgbColor = p.color(tintedColor.levels[0], tintedColor.levels[1], tintedColor.levels[2])
+              p.colorMode(p.HSB, 360, 100, 100, 100)
+              
+              const hue = p.hue(rgbColor)
+              const saturation = p.saturation(rgbColor)
+              const finalBrightness = p.map(brightness, 10, 100, 20, 100) // Map brightness to visible range
+              
+              p.fill(hue, saturation, finalBrightness, 90)
               
               p.noStroke()
               
@@ -743,7 +758,21 @@ const ConsoleFrame = ({
           // Create proper contour lines using shapes at specific elevation levels
           for (let elevation = 0; elevation < 1; elevation += 0.2) {
             p.noStroke()
-            p.fill(0, 0, 100, 90) // White shapes
+            
+            // Apply tinting to white base color
+            const baseColor = p.color(255, 255, 255, 255)
+            const tintedColor = applyTintToColor(baseColor, tint)
+            
+            // Convert tinted color to HSB for p5.js
+            p.colorMode(p.RGB, 255, 255, 255, 255)
+            const rgbColor = p.color(tintedColor.levels[0], tintedColor.levels[1], tintedColor.levels[2])
+            p.colorMode(p.HSB, 360, 100, 100, 100)
+            
+            const hue = p.hue(rgbColor)
+            const saturation = p.saturation(rgbColor)
+            const brightness = p.brightness(rgbColor)
+            
+            p.fill(hue, saturation, brightness, 90)
             
             // Create a grid to sample elevation data
             const gridSize = 6
@@ -854,6 +883,30 @@ const ConsoleFrame = ({
       ctx.fillStyle = tint || '#ffffff'
       ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
     }
+  }
+
+  // Helper function to apply tinting to a color
+  const applyTintToColor = (baseColor, tintColor) => {
+    if (!tintColor || tintColor === '#FFFFFF') {
+      return baseColor // No tinting, return original color
+    }
+    
+    // Convert tint color to RGB
+    const tintR = parseInt(tintColor.slice(1, 3), 16)
+    const tintG = parseInt(tintColor.slice(3, 5), 16)
+    const tintB = parseInt(tintColor.slice(5, 7), 16)
+    
+    // Get base color RGB values
+    const baseR = baseColor.levels[0] || 255
+    const baseG = baseColor.levels[1] || 255
+    const baseB = baseColor.levels[2] || 255
+    
+    // Blend the colors (simple multiplication blend)
+    const blendedR = Math.min(255, Math.floor(baseR * tintR / 255))
+    const blendedG = Math.min(255, Math.floor(baseG * tintG / 255))
+    const blendedB = Math.min(255, Math.floor(baseB * tintB / 255))
+    
+    return baseColor.constructor(blendedR, blendedG, blendedB)
   }
 
   // Helper function to draw shapes

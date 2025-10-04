@@ -16,7 +16,7 @@ function App() {
   const [frequency, setFrequency] = useState(3)
   const [rotation, setRotation] = useState(0)
   const [scale, setScale] = useState(1)
-  const [tint, setTint] = useState(null) // null for no tint, or color value
+  const [tint, setTint] = useState('#FFFFFF') // white for no tint, or color value
   const [removeBackground, setRemoveBackground] = useState(false) // background removal toggle
   const [zoom, setZoom] = useState(1.5) // zoom level for contour pattern (1.0 = no zoom, higher = more zoom)
 

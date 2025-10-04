@@ -1145,33 +1145,31 @@ export const mapMetadataToP5Params = (metadata: ImageMetadata, seed?: number): P
     // Additional parameters
     iso: metadata.iso,
     season: metadata.season,
-    tintColor: null // Will be set by the component
+    tintColor: '#FFFFFF' // Default to white (no tint)
   };
 };
 
 // Helper function to apply color tinting
 function applyTint(p: p5, color: p5.Color, tintColor: string | null): p5.Color {
-  if (!tintColor) return color;
+  if (!tintColor || tintColor === '#FFFFFF') return color;
   
-  // Convert tint color to HSB for better blending
-  const tint = p.color(tintColor);
-  const originalH = p.hue(color);
-  const originalS = p.saturation(color);
-  const originalB = p.brightness(color);
+  // Convert tint color to RGB for multiplication blending
+  const tintR = parseInt(tintColor.slice(1, 3), 16);
+  const tintG = parseInt(tintColor.slice(3, 5), 16);
+  const tintB = parseInt(tintColor.slice(5, 7), 16);
+  
+  // Get original color RGB values
+  const originalR = p.red(color);
+  const originalG = p.green(color);
+  const originalB = p.blue(color);
   const originalA = p.alpha(color);
   
-  const tintH = p.hue(tint);
-  const tintS = p.saturation(tint);
-  const tintB = p.brightness(tint);
+  // Apply multiplication blending (tinting)
+  const blendedR = Math.min(255, Math.floor(originalR * tintR / 255));
+  const blendedG = Math.min(255, Math.floor(originalG * tintG / 255));
+  const blendedB = Math.min(255, Math.floor(originalB * tintB / 255));
   
-  // Blend hue towards tint color (weighted average)
-  const blendedH = (originalH + tintH * 0.3) % 360;
-  // Increase saturation slightly when tinting
-  const blendedS = Math.min(100, originalS + tintS * 0.2);
-  // Keep original brightness but allow some tint influence
-  const blendedB = Math.min(100, originalB + (tintB - 50) * 0.1);
-  
-  return p.color(blendedH, blendedS, blendedB, originalA);
+  return p.color(blendedR, blendedG, blendedB, originalA);
 }
 
 // Helper functions
