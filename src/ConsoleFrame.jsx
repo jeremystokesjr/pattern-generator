@@ -82,9 +82,8 @@ const ConsoleFrame = ({
         }
 
         p.setup = function() {
-          // Create larger canvas for zoom effect
-          const zoomFactor = zoom
-          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          // Create canvas at normal size
+          const canvas = p.createCanvas(width, height)
           p.colorMode(p.RGB, 255, 255, 255, 255)
           p.background(0, 0, 0)
           
@@ -149,8 +148,13 @@ const ConsoleFrame = ({
           // Save the current transformation matrix
           p.push()
           
-          // Move to center of canvas for rotation
+          // Move to center of canvas for rotation and zoom
           p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          // Convert zoom (-1.0 to +1.0) to scale factor (0.5x to 2.0x)
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom) // 0 = 1.0x, +1 = 2.0x, -1 = 0.5x
+          p.scale(zoomScale)
           
           // Apply rotation to entire pattern
           p.rotate(rotation * Math.PI / 180)
@@ -250,20 +254,11 @@ const ConsoleFrame = ({
       
       // Wait for the sketch to render
       setTimeout(() => {
-        // Copy P5.js canvas to our main canvas with zoom in effect
+        // Copy P5.js canvas to our main canvas
         const p5Canvas = p5Instance.canvas
-        const zoomFactor = zoom
         
-        // Show only the center portion of the larger pattern (zoom in effect)
-        const sourceX = (p5Canvas.width - width) / 2
-        const sourceY = (p5Canvas.height - height) / 2
-        
-        // Draw only a portion of the larger canvas to our display canvas
-        ctx.drawImage(
-          p5Canvas, 
-          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
-          0, 0, width, height               // Destination: full display canvas
-        )
+        // Draw the P5.js canvas to our display canvas
+        ctx.drawImage(p5Canvas, 0, 0, width, height)
         
         // Clean up P5.js instance
         p5Instance.remove()
@@ -301,9 +296,8 @@ const ConsoleFrame = ({
         }
 
         p.setup = function() {
-          // Create larger canvas for zoom effect
-          const zoomFactor = zoom
-          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          // Create canvas at normal size
+          const canvas = p.createCanvas(width, height)
           p.colorMode(p.RGB, 255, 255, 255, 255)
           p.background(0, 0, 0)
           
@@ -379,8 +373,13 @@ const ConsoleFrame = ({
           // Save the current transformation matrix
           p.push()
           
-          // Move to center of canvas for rotation
+          // Move to center of canvas for rotation and zoom
           p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          // Convert zoom (-1.0 to +1.0) to scale factor (0.5x to 2.0x)
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom) // 0 = 1.0x, +1 = 2.0x, -1 = 0.5x
+          p.scale(zoomScale)
           
           // Apply rotation to entire pattern
           p.rotate(rotation * Math.PI / 180)
@@ -487,20 +486,11 @@ const ConsoleFrame = ({
       
       // Wait for the sketch to render
       setTimeout(() => {
-        // Copy P5.js canvas to our main canvas with zoom in effect
+        // Copy P5.js canvas to our main canvas
         const p5Canvas = p5Instance.canvas
-        const zoomFactor = zoom
         
-        // Show only the center portion of the larger pattern (zoom in effect)
-        const sourceX = (p5Canvas.width - width) / 2
-        const sourceY = (p5Canvas.height - height) / 2
-        
-        // Draw only a portion of the larger canvas to our display canvas
-        ctx.drawImage(
-          p5Canvas, 
-          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
-          0, 0, width, height               // Destination: full display canvas
-        )
+        // Draw the P5.js canvas to our display canvas
+        ctx.drawImage(p5Canvas, 0, 0, width, height)
         
         // Clean up P5.js instance
         p5Instance.remove()
@@ -538,9 +528,8 @@ const ConsoleFrame = ({
         let animationSpeed = 0.01
 
         p.setup = function() {
-          // Create larger canvas for zoom effect
-          const zoomFactor = zoom
-          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          // Create canvas at normal size
+          const canvas = p.createCanvas(width, height)
           p.colorMode(p.HSB, 360, 100, 100, 100)
           p.background(0, 0, 0)
           
@@ -711,20 +700,11 @@ const ConsoleFrame = ({
       
       // Wait for the sketch to render
       setTimeout(() => {
-        // Copy P5.js canvas to our main canvas with zoom in effect
+        // Copy P5.js canvas to our main canvas
         const p5Canvas = p5Instance.canvas
-        const zoomFactor = zoom
         
-        // Show only the center portion of the larger pattern (zoom in effect)
-        const sourceX = (p5Canvas.width - width) / 2
-        const sourceY = (p5Canvas.height - height) / 2
-        
-        // Draw only a portion of the larger canvas to our display canvas
-        ctx.drawImage(
-          p5Canvas, 
-          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
-          0, 0, width, height               // Destination: full display canvas
-        )
+        // Draw the P5.js canvas to our display canvas
+        ctx.drawImage(p5Canvas, 0, 0, width, height)
         
         // Clean up P5.js instance
         p5Instance.remove()
@@ -761,9 +741,8 @@ const ConsoleFrame = ({
         let animationSpeed = 0.005
 
         p.setup = function() {
-          // Create much larger canvas, then show only a portion (zoom in effect)
-          const zoomFactor = zoom // Use zoom parameter from controls
-          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          // Create canvas at normal size
+          const canvas = p.createCanvas(width, height)
           p.colorMode(p.HSB, 360, 100, 100, 100)
           p.background(0, 0, 0)
           
@@ -815,8 +794,13 @@ const ConsoleFrame = ({
           // Save the current transformation matrix
           p.push()
           
-          // Move to center of canvas for rotation
+          // Move to center of canvas for rotation and zoom
           p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          // Convert zoom (-1.0 to +1.0) to scale factor (0.5x to 2.0x)
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom) // 0 = 1.0x, +1 = 2.0x, -1 = 0.5x
+          p.scale(zoomScale)
           
           // Apply rotation to entire pattern
           p.rotate(rotation * Math.PI / 180)
@@ -942,20 +926,11 @@ const ConsoleFrame = ({
       
       // Wait for the sketch to render
       setTimeout(() => {
-        // Copy P5.js canvas to our main canvas with zoom in effect
+        // Copy P5.js canvas to our main canvas
         const p5Canvas = p5Instance.canvas
-        const zoomFactor = zoom
         
-        // Show only the center portion of the larger pattern (zoom in effect)
-        const sourceX = (p5Canvas.width - width) / 2
-        const sourceY = (p5Canvas.height - height) / 2
-        
-        // Draw only a portion of the larger canvas to our display canvas
-        ctx.drawImage(
-          p5Canvas, 
-          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
-          0, 0, width, height               // Destination: full display canvas
-        )
+        // Draw the P5.js canvas to our display canvas
+        ctx.drawImage(p5Canvas, 0, 0, width, height)
         
         // Clean up P5.js instance
         p5Instance.remove()

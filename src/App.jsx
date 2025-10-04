@@ -18,7 +18,7 @@ function App() {
   const [scale, setScale] = useState(1)
   const [tint, setTint] = useState('#FFFFFF') // white for no tint, or color value
   const [removeBackground, setRemoveBackground] = useState(false) // background removal toggle
-  const [zoom, setZoom] = useState(1.5) // zoom level for contour pattern (1.0 = no zoom, higher = more zoom)
+  const [zoom, setZoom] = useState(0) // zoom level: 0 = no zoom, positive = zoom in, negative = zoom out
 
   // Remove background from image
   const removeImageBackground = (image) => {

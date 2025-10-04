@@ -56,9 +56,17 @@
 - Add feature for toggle of animation
 
 ## Bug Fixes Needed:
+
+Color Tinter
 - Change smoothness of the dial slider in color tint
 - Smooth animation so there is no jump when changing the color/tint
 - Add click on color selector to move the dial too
+
+Dials
+- Improve the responsiveness and UX of turning the dials
+
+Rotation
+- Smooth the animation for rotation
 
 ## Bug Fixes Completed:
 - ✅ Fixed dial controls responsiveness issues (Version 5)
@@ -70,6 +78,13 @@
 - ✅ Updated rotation dial range from 0°-360° to -180° to +180°
 - ✅ Ensured 0° is at 12 o'clock position (middle) for intuitive control
 - ✅ Improved rotation dial usability with dead zone and reduced sensitivity
+- ✅ Fixed pattern rotation to rotate entire patterns (Version 5.1)
+  - Fixed wave pattern rotation to rotate entire pattern, not just wave phase
+  - Applied proper P5.js transformation matrix rotation to all patterns
+  - Fixed bump pattern rotation for entire particle field
+  - Fixed contour pattern rotation for entire contour system
+  - All patterns now rotate as a whole around center point
+  - Changed default pattern to 'wave' for testing
 
 ## Recent Changes:
 - ✅ Renamed frequency knob to scale knob - now controls dot size instead of particle count

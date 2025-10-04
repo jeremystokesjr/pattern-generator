@@ -158,7 +158,14 @@ const Controls = ({
         onScaleChange(Math.round(newValue * 100) / 100) // Round to 2 decimals
         break
       case 'zoom':
-        newValue = Math.max(1.0, Math.min(5.0, dragStartValue + deltaY * sensitivity * 0.1)) // Zoom range 1.0 to 5.0
+        // Add small dead zone to prevent accidental tiny movements
+        const zoomDeadZone = 5
+        if (Math.abs(deltaX) < zoomDeadZone) return
+        
+        // Zoom range: -1.0 to +1.0 with 0 in middle (like camera zoom)
+        const zoomSensitivity = 0.05 // Reduced sensitivity for more precise control
+        newValue = dragStartValue + deltaX * zoomSensitivity
+        newValue = Math.max(-1.0, Math.min(1.0, newValue))
         onZoomChange(Math.round(newValue * 100) / 100) // Round to 2 decimals
         break
       case 'colorSlider':
@@ -252,8 +259,9 @@ const Controls = ({
   
 
   // Calculate dial rotations based on current values
-  const frequencyRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range) - now using scale
+  const zoomDialRotation = (zoom / 1.0) * 180 // -180° to +180° (360° range) - zoom range -1.0 to +1.0
   const rotationDialRotation = rotation // -180° to +180°, where 0° is at 12 o'clock
+  const scaleDialRotation = ((scale - 0.1) / 2.9) * 270 - 135 // -135° to +135° (270° range) - scale range 0.1 to 3.0
 
   useEffect(() => {
     if (isDragging) {
@@ -397,12 +405,12 @@ const Controls = ({
             viewBox="0 0 164 149" 
             fill="none" 
             className="absolute top-4 cursor-grab active:cursor-grabbing"
-            onMouseDown={(e) => handleKnobMouseDown(e, 'frequency')}
+            onMouseDown={(e) => handleKnobMouseDown(e, 'zoom')}
           >
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="#222" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
             {/* Rotating inner dial group */}
-            <g transform={`rotate(${frequencyRotation} 84 82)`} className="transition-transform duration-150">
+            <g transform={`rotate(${zoomDialRotation} 84 82)`} className="transition-transform duration-150">
               <circle cx="84" cy="82" r="51.4688" fill="url(#paint0_linear_35_318_1)"/>
               <circle cx="84" cy="82" r="52.0406" stroke="url(#paint1_radial_35_318_1)" strokeOpacity="0.8" strokeWidth="1.14375"/>
               <g filter="url(#filter0_f_35_318)">
@@ -427,8 +435,8 @@ const Controls = ({
               </radialGradient>
             </defs>
           </svg>
-          {/* Scale Label */}
-          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">scale</div>
+          {/* Zoom Label */}
+          <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">zoom</div>
         </div>
 
         {/* Rotation Knob Frame */}
@@ -488,7 +496,7 @@ const Controls = ({
             <path d="M36.1233 148.689C22.0689 139.036 11.4209 125.193 5.69747 109.132C-0.0259142 93.0712 -0.532447 75.6135 4.2501 59.248C9.03264 42.8824 18.8601 28.4447 32.3312 17.9933C45.8023 7.54184 62.2293 1.61037 79.2699 1.0446C96.3105 0.478831 113.095 5.30764 127.229 14.8425C141.364 24.3774 152.128 38.1315 157.985 54.1438C163.843 70.156 164.495 87.6089 159.85 104.014C155.204 120.419 145.498 134.938 132.115 145.502" stroke="black" strokeWidth="1" strokeLinecap="round"/>
             <circle cx="84" cy="82" r="65" fill="#222" filter="drop-shadow(0 18.3px 22.875px rgba(0, 0, 0, 0.40))" className="knob-padding"/>
             {/* Rotating inner dial group */}
-            <g transform={`rotate(${frequencyRotation} 84 82)`} className="transition-transform duration-150">
+            <g transform={`rotate(${scaleDialRotation} 84 82)`} className="transition-transform duration-150">
               <circle cx="84" cy="82" r="51.4688" fill="url(#paint0_linear_35_318_3)"/>
               <circle cx="84" cy="82" r="52.0406" stroke="url(#paint1_radial_35_318_3)" strokeOpacity="0.8" strokeWidth="1.14375"/>
               <g filter="url(#filter0_f_35_318_3)">
