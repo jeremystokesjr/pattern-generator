@@ -25,6 +25,7 @@ const ConsoleFrame = ({
   const canvasRef = useRef(null)
   const contourP5InstanceRef = useRef(null)
   const bumpP5InstanceRef = useRef(null)
+  const waveP5InstanceRef = useRef(null)
 
   // Cleanup function for contour pattern
   const cleanupContourPattern = () => {
@@ -42,10 +43,19 @@ const ConsoleFrame = ({
     }
   }
 
+  // Cleanup function for wave pattern
+  const cleanupWavePattern = () => {
+    if (waveP5InstanceRef.current) {
+      waveP5InstanceRef.current.remove()
+      waveP5InstanceRef.current = null
+    }
+  }
+
   // Cleanup all patterns
   const cleanupAllPatterns = () => {
     cleanupContourPattern()
     cleanupBumpPattern()
+    cleanupWavePattern()
   }
 
   useEffect(() => {
@@ -68,11 +78,16 @@ const ConsoleFrame = ({
       cleanupAllPatterns()
       // Start continuous bump animation
       generateBumpPatternContinuous(ctx, canvas.width, canvas.height)
+    } else if (patternType === 'wave') {
+      // Clean up any existing patterns
+      cleanupAllPatterns()
+      // Start continuous wave animation
+      generateWavePatternContinuous(ctx, canvas.width, canvas.height)
     } else {
       // Clean up any existing animated patterns
       cleanupAllPatterns()
       // Generate other patterns normally (static)
-    generatePattern(ctx, canvas.width, canvas.height)
+      generatePattern(ctx, canvas.width, canvas.height)
     }
     
     // Cleanup on unmount or pattern change
@@ -499,6 +514,202 @@ const ConsoleFrame = ({
       
     } catch (error) {
       console.error('Error loading P5.js for bump pattern:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
+    }
+  }
+
+  // Continuous wave pattern generation
+  const generateWavePatternContinuous = async (ctx, width, height) => {
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
+      
+      // Create P5.js sketch for continuous wave pattern
+      const sketch = (p) => {
+        let time = 0
+        let settings = {
+          numWaves: 8,
+          amplitude: 40,
+          frequency: 0.02,
+          shapeSpacing: 8,
+          shapeSize: 3,
+          waveSpacing: 40
+        }
+
+        p.setup = function() {
+          const canvas = p.createCanvas(width, height)
+          p.colorMode(p.RGB, 255, 255, 255, 255)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToWaveSettings()
+        }
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Update time for animation
+          time += Math.abs(animationSpeed) * 0.01
+          
+          // Draw wave pattern
+          drawWavePattern()
+          
+          // Copy P5.js canvas to main canvas continuously
+          ctx.drawImage(p.canvas, 0, 0, width, height)
+        }
+
+        function mapMetadataToWaveSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+            else if (lens.includes('macro')) shape = 'rhombus'
+            else if (lens.includes('zoom')) shape = 'star'
+          }
+          p.shapeType = shape
+          
+          // Map ISO to shape density/spacing
+          const iso = imageMetadata?.iso || 200
+          settings.shapeSpacing = Math.max(4, Math.min(12, 8 - (iso / 200)))
+          
+          // Map aperture to wave amplitude (if available)
+          const aperture = imageMetadata?.aperture || 2.8
+          settings.amplitude = Math.max(20, Math.min(80, 40 + (aperture * 5)))
+          
+          // Map shutter speed to wave frequency (if available)
+          const shutterSpeed = imageMetadata?.shutterSpeed || 1/60
+          settings.frequency = Math.max(0.01, Math.min(0.05, 0.02 + (shutterSpeed * 0.1)))
+          
+          // Map flash to shape size
+          const flash = imageMetadata?.flash || false
+          settings.shapeSize = flash ? 4 : 3
+          
+          // Map ISO to number of waves - more waves for denser pattern
+          settings.numWaves = Math.max(10, Math.min(18, 12 + Math.floor(iso / 150)))
+          
+          // Dynamic wave spacing based on canvas height and number of waves
+          settings.waveSpacing = Math.max(25, Math.min(50, p.height / settings.numWaves))
+        }
+
+        function drawWavePattern() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation and zoom
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom)
+          p.scale(zoomScale)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
+          // Calculate wave spacing
+          const totalWaveHeight = settings.numWaves * settings.waveSpacing
+          const startY = (p.height - totalWaveHeight) / 2 + settings.waveSpacing / 2
+          
+          // Draw each wave
+          for (let waveIndex = 0; waveIndex < settings.numWaves; waveIndex++) {
+            const baseY = startY + waveIndex * settings.waveSpacing
+            
+            // Draw shapes along the sinusoidal wave path
+            for (let x = 0; x < p.width; x += settings.shapeSpacing) {
+              // Calculate sinusoidal wave position with animation
+              const waveY = baseY + Math.sin(x * settings.frequency + time) * settings.amplitude
+              
+              // Apply tinting to white base color
+              if (tint && tint !== '#FFFFFF') {
+                // Convert tint color to RGB
+                const tintR = parseInt(tint.slice(1, 3), 16)
+                const tintG = parseInt(tint.slice(3, 5), 16)
+                const tintB = parseInt(tint.slice(5, 7), 16)
+                
+                // Blend white (255,255,255) with tint color using multiplication
+                const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+                const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+                const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+                
+                p.fill(blendedR, blendedG, blendedB)
+              } else {
+                // No tinting, use white
+                p.fill(255, 255, 255)
+              }
+              p.noStroke()
+              
+              // Draw shape at wave position
+              drawShape(x, waveY, settings.shapeSize)
+            }
+          }
+          
+          // Restore the transformation matrix
+          p.pop()
+        }
+
+        function drawShape(x, y, size) {
+          switch (p.shapeType) {
+            case 'circle':
+              p.ellipse(x, y, size)
+              break
+            case 'rectangle':
+              p.rect(x - size/2, y - size/2, size, size)
+              break
+            case 'triangle':
+              p.triangle(
+                x, y - size,
+                x - size, y + size,
+                x + size, y + size
+              )
+              break
+            case 'rhombus':
+              p.beginShape()
+              p.vertex(x, y - size)
+              p.vertex(x - size, y)
+              p.vertex(x, y + size)
+              p.vertex(x + size, y)
+              p.endShape(p.CLOSE)
+              break
+            case 'star':
+              drawStar(x, y, size)
+              break
+          }
+        }
+
+        function drawStar(x, y, size) {
+          const spikes = 5
+          const outerRadius = size
+          const innerRadius = size * 0.4
+          
+          p.beginShape()
+          for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const angle = (i * p.PI) / spikes
+            const px = x + p.cos(angle) * radius
+            const py = y + p.sin(angle) * radius
+            p.vertex(px, py)
+          }
+          p.endShape(p.CLOSE)
+        }
+      }
+
+      // Create and store P5.js instance for continuous animation
+      waveP5InstanceRef.current = new p5(sketch, canvasRef.current)
+      
+    } catch (error) {
+      console.error('Error loading P5.js for wave pattern:', error)
       // Fallback to simple pattern
       ctx.fillStyle = tint || '#ffffff'
       ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
