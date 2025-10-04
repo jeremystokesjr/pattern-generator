@@ -23,8 +23,30 @@ const ConsoleFrame = ({
   onImageRemove
 }) => {
   const canvasRef = useRef(null)
-  const p5InstanceRef = useRef(null)
-  const animationIdRef = useRef(null)
+  const contourP5InstanceRef = useRef(null)
+  const bumpP5InstanceRef = useRef(null)
+
+  // Cleanup function for contour pattern
+  const cleanupContourPattern = () => {
+    if (contourP5InstanceRef.current) {
+      contourP5InstanceRef.current.remove()
+      contourP5InstanceRef.current = null
+    }
+  }
+
+  // Cleanup function for bump pattern
+  const cleanupBumpPattern = () => {
+    if (bumpP5InstanceRef.current) {
+      bumpP5InstanceRef.current.remove()
+      bumpP5InstanceRef.current = null
+    }
+  }
+
+  // Cleanup all patterns
+  const cleanupAllPatterns = () => {
+    cleanupContourPattern()
+    cleanupBumpPattern()
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -35,9 +57,453 @@ const ConsoleFrame = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // Generate pattern based on pattern type
+    // Special handling for animated patterns - continuous animation
+    if (patternType === 'contour') {
+      // Clean up any existing patterns
+      cleanupAllPatterns()
+      // Start continuous contour animation
+      generateContourPatternContinuous(ctx, canvas.width, canvas.height)
+    } else if (patternType === 'bump') {
+      // Clean up any existing patterns
+      cleanupAllPatterns()
+      // Start continuous bump animation
+      generateBumpPatternContinuous(ctx, canvas.width, canvas.height)
+    } else {
+      // Clean up any existing animated patterns
+      cleanupAllPatterns()
+      // Generate other patterns normally (static)
     generatePattern(ctx, canvas.width, canvas.height)
+    }
+    
+    // Cleanup on unmount or pattern change
+    return cleanupAllPatterns
   }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed])
+
+  // Continuous contour pattern generation
+  const generateContourPatternContinuous = async (ctx, width, height) => {
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
+      
+      // Create P5.js sketch for continuous contour pattern
+      const sketch = (p) => {
+        let settings = {
+          spacing: 4,
+          shapeSize: 1.2,
+          noiseScale: 0.02,
+          contourSpacing: 8
+        }
+        let time = 0
+        let localAnimationSpeed = Math.abs(animationSpeed) * 0.003
+
+        p.setup = function() {
+          const canvas = p.createCanvas(width, height)
+          p.colorMode(p.HSB, 360, 100, 100, 100)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          p.noiseSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToShapeContourSettings()
+        }
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Update time for animation
+          time += localAnimationSpeed
+          
+          // Draw contour lines made of shapes
+          drawShapeContours()
+          
+          // Copy P5.js canvas to main canvas continuously
+          ctx.drawImage(p.canvas, 0, 0, width, height)
+        }
+
+        function mapMetadataToShapeContourSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+          }
+          
+          // Map ISO to spacing (higher ISO = denser shapes)
+          const iso = imageMetadata?.iso || 200
+          settings.spacing = Math.max(2, Math.min(6, 4 - (iso / 400)))
+          
+          // Map ISO to shape size
+          settings.shapeSize = Math.max(0.8, Math.min(2.0, 1.2 + (iso / 800)))
+          
+          // Map ISO to noise scale and other settings
+          settings.noiseScale = Math.max(0.01, Math.min(0.04, 0.02 + (iso / 15000)))
+          
+          // Store shape for use in drawShapeContours
+          p.shapeType = shape
+        }
+
+        function drawShapeContours() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation and zoom
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom)
+          p.scale(zoomScale)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
+          // Create proper contour lines using shapes at specific elevation levels
+          for (let elevation = 0; elevation < 1; elevation += 0.2) {
+            p.noStroke()
+            
+            // Apply tinting to white base color
+            if (tint && tint !== '#FFFFFF') {
+              // Convert tint color to RGB
+              const tintR = parseInt(tint.slice(1, 3), 16)
+              const tintG = parseInt(tint.slice(3, 5), 16)
+              const tintB = parseInt(tint.slice(5, 7), 16)
+              
+              // Blend white (255,255,255) with tint color using multiplication
+              const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+              const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+              const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+              
+              // Convert to HSB for p5.js
+              p.colorMode(p.RGB, 255, 255, 255, 255)
+              const rgbColor = p.color(blendedR, blendedG, blendedB)
+              p.colorMode(p.HSB, 360, 100, 100, 100)
+              
+              const hue = p.hue(rgbColor)
+              const saturation = p.saturation(rgbColor)
+              const brightness = p.brightness(rgbColor)
+              
+              p.fill(hue, saturation, brightness, 90)
+            } else {
+              // No tinting, use white
+              p.fill(0, 0, 100, 90) // White in HSB
+            }
+            
+            // Create a grid to sample elevation data
+            const gridSize = 6
+            const cols = Math.floor(p.width / gridSize) + 1
+            const rows = Math.floor(p.height / gridSize) + 1
+            
+            // Create elevation grid
+            let elevationGrid = []
+            for (let x = 0; x < cols; x++) {
+              elevationGrid[x] = []
+              for (let y = 0; y < rows; y++) {
+                const baseX = x * gridSize
+                const baseY = y * gridSize
+                
+                const noiseX = baseX * settings.noiseScale
+                const noiseY = baseY * settings.noiseScale
+                
+                // Add warping
+                const warpX = p.noise(noiseX + 2000, noiseY + 2000, time * 0.1) * 2 - 1
+                const warpY = p.noise(noiseX + 3000, noiseY + 3000, time * 0.1) * 2 - 1
+                
+                elevationGrid[x][y] = {
+                  x: baseX + warpX,
+                  y: baseY + warpY,
+                  elevation: p.noise(noiseX, noiseY, time * 0.3)
+                }
+              }
+            }
+            
+            // Find contour line segments using marching squares approach
+            for (let x = 0; x < cols - 1; x++) {
+              for (let y = 0; y < rows - 1; y++) {
+                const p1 = elevationGrid[x][y]
+                const p2 = elevationGrid[x + 1][y]
+                const p3 = elevationGrid[x + 1][y + 1]
+                const p4 = elevationGrid[x][y + 1]
+                
+                // Check each edge of the square for contour intersections
+                const edges = [
+                  {p1: p1, p2: p2}, // top edge
+                  {p1: p2, p2: p3}, // right edge
+                  {p1: p3, p2: p4}, // bottom edge
+                  {p1: p4, p2: p1}  // left edge
+                ]
+                
+                edges.forEach(edge => {
+                  const e1 = edge.p1.elevation
+                  const e2 = edge.p2.elevation
+                  
+                  // Check if contour line crosses this edge
+                  if ((e1 < elevation && e2 >= elevation) || (e1 >= elevation && e2 < elevation)) {
+                    // Calculate intersection point
+                    const t = (elevation - e1) / (e2 - e1)
+                    const ix = edge.p1.x + t * (edge.p2.x - edge.p1.x)
+                    const iy = edge.p1.y + t * (edge.p2.y - edge.p1.y)
+                    
+                    // Draw shape at the intersection point
+                    drawShape(ix, iy, settings.shapeSize, p.shapeType)
+                  }
+                })
+              }
+            }
+          }
+          
+          // Restore the transformation matrix
+          p.pop()
+        }
+
+        function drawShape(x, y, size, shapeType) {
+          switch (shapeType) {
+            case 'circle':
+              p.ellipse(x, y, size, size)
+              break
+            case 'rectangle':
+              p.rect(x - size/2, y - size/2, size, size)
+              break
+            case 'triangle':
+              p.triangle(
+                x, y - size,
+                x - size, y + size,
+                x + size, y + size
+              )
+              break
+          }
+        }
+      }
+
+      // Create and store P5.js instance for continuous animation
+      contourP5InstanceRef.current = new p5(sketch, canvasRef.current)
+      
+    } catch (error) {
+      console.error('Error loading P5.js for contour pattern:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
+    }
+  }
+
+  // Continuous bump pattern generation
+  const generateBumpPatternContinuous = async (ctx, width, height) => {
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
+      
+      // Create P5.js sketch for continuous bump pattern
+      const sketch = (p) => {
+        let particles = []
+        let time = 0
+        let settings = {
+          spacing: 20,
+          dotMinSize: 1,
+          dotMaxSize: 8,
+          noiseScale: 0.02
+        }
+
+        p.setup = function() {
+          const canvas = p.createCanvas(width, height)
+          p.colorMode(p.RGB, 255, 255, 255, 255)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          p.noiseSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToBumpSettings()
+          
+          // Initialize particles
+          initializeParticles()
+        }
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Update time for animation
+          time += Math.abs(animationSpeed) * 0.005
+          
+          // Draw bump pattern
+          drawBumpPattern()
+          
+          // Copy P5.js canvas to main canvas continuously
+          ctx.drawImage(p.canvas, 0, 0, width, height)
+        }
+
+        function mapMetadataToBumpSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+            else if (lens.includes('macro')) shape = 'rhombus'
+            else if (lens.includes('zoom')) shape = 'star'
+          }
+          p.shapeType = shape
+          
+          // Map ISO to spacing (higher ISO = denser grid) - much denser for reference look
+          const iso = imageMetadata?.iso || 200
+          settings.spacing = Math.max(6, Math.min(12, 8 - (iso / 200)))
+          
+          // Progressive scaling for wave buildup - size varies with elevation
+          settings.dotMinSize = 1.5 // Smaller base size
+          settings.dotMaxSize = 4.5 // Larger size for peaks
+          
+          // Map ISO to noise scale for smooth undulation
+          settings.noiseScale = Math.max(0.02, Math.min(0.04, 0.03 + (iso / 20000)))
+        }
+
+        function initializeParticles() {
+          particles = []
+          
+          for (let x = 0; x < p.width; x += settings.spacing) {
+            for (let y = 0; y < p.height; y += settings.spacing) {
+              particles.push({
+                x: x,
+                y: y,
+                baseX: x,
+                baseY: y,
+                size: p.random(settings.dotMinSize, settings.dotMaxSize), // Variable size for wave buildup
+                color: p.color(255, 255, 255) // White color
+              })
+            }
+          }
+        }
+
+        function drawBumpPattern() {
+          // Save the current transformation matrix
+          p.push()
+          
+          // Move to center of canvas for rotation and zoom
+          p.translate(p.width / 2, p.height / 2)
+          
+          // Apply zoom transformation
+          const zoomScale = zoom >= 0 ? 1 + zoom : 1 / (1 - zoom)
+          p.scale(zoomScale)
+          
+          // Apply rotation to entire pattern
+          p.rotate(rotation * Math.PI / 180)
+          
+          // Move back to original coordinate system
+          p.translate(-p.width / 2, -p.height / 2)
+          
+          particles.forEach(particle => {
+            // Apply Perlin noise displacement for 3D bump effect
+            const noiseX = p.noise(particle.baseX * settings.noiseScale, particle.baseY * settings.noiseScale, time)
+            const noiseY = p.noise(particle.baseX * settings.noiseScale + 1000, particle.baseY * settings.noiseScale + 1000, time)
+            
+            // Calculate displacement based on noise (creates peaks and valleys) - smaller displacement for smoother look
+            const displacementX = p.map(noiseX, 0, 1, -15, 15)
+            const displacementY = p.map(noiseY, 0, 1, -15, 15)
+            
+            particle.x = particle.baseX + displacementX
+            particle.y = particle.baseY + displacementY
+            
+            // Calculate elevation for color variation (3D effect) - use same noise for consistency
+            const elevation = p.noise(particle.baseX * settings.noiseScale * 0.7, particle.baseY * settings.noiseScale * 0.7, time * 0.3)
+            
+            // Progressive scaling for wave buildup - size varies with elevation
+            const sizeMultiplier = p.map(elevation, 0, 1, 0.6, 1.4) // Smaller in valleys, larger on peaks
+            particle.size = p.map(elevation, 0, 1, settings.dotMinSize, settings.dotMaxSize) * sizeMultiplier
+            
+            // Apply tinting to white base color
+            if (tint && tint !== '#FFFFFF') {
+              // Convert tint color to RGB
+              const tintR = parseInt(tint.slice(1, 3), 16)
+              const tintG = parseInt(tint.slice(3, 5), 16)
+              const tintB = parseInt(tint.slice(5, 7), 16)
+              
+              // Blend white (255,255,255) with tint color using multiplication
+              const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+              const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+              const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+              
+              particle.color = p.color(blendedR, blendedG, blendedB, 255)
+            } else {
+              // No tinting, use white
+              particle.color = p.color(255, 255, 255, 255)
+            }
+            
+            // Draw shape
+            drawShape(particle)
+          })
+          
+          // Restore the transformation matrix
+          p.pop()
+        }
+
+        function drawShape(particle) {
+          p.fill(particle.color)
+          p.noStroke()
+          
+          switch (p.shapeType) {
+            case 'circle':
+              p.ellipse(particle.x, particle.y, particle.size)
+              break
+            case 'rectangle':
+              p.rect(particle.x - particle.size/2, particle.y - particle.size/2, particle.size, particle.size)
+              break
+            case 'triangle':
+              p.triangle(
+                particle.x, particle.y - particle.size,
+                particle.x - particle.size, particle.y + particle.size,
+                particle.x + particle.size, particle.y + particle.size
+              )
+              break
+            case 'rhombus':
+              p.beginShape()
+              p.vertex(particle.x, particle.y - particle.size)
+              p.vertex(particle.x - particle.size, particle.y)
+              p.vertex(particle.x, particle.y + particle.size)
+              p.vertex(particle.x + particle.size, particle.y)
+              p.endShape(p.CLOSE)
+              break
+            case 'star':
+              drawStar(particle.x, particle.y, particle.size)
+              break
+          }
+        }
+
+        function drawStar(x, y, size) {
+          const spikes = 5
+          const outerRadius = size
+          const innerRadius = size * 0.4
+          
+          p.beginShape()
+          for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const angle = (i * p.PI) / spikes
+            const px = x + p.cos(angle) * radius
+            const py = y + p.sin(angle) * radius
+            p.vertex(px, py)
+          }
+          p.endShape(p.CLOSE)
+        }
+      }
+
+      // Create and store P5.js instance for continuous animation
+      bumpP5InstanceRef.current = new p5(sketch, canvasRef.current)
+      
+    } catch (error) {
+      console.error('Error loading P5.js for bump pattern:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
+    }
+  }
 
   // Generate pattern based on pattern type
   const generatePattern = async (ctx, width, height) => {
