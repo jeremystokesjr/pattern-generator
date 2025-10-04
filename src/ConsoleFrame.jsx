@@ -1720,7 +1720,24 @@ const ConsoleFrame = ({
   }
 
   // Handle download functionality
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    // Check if pattern is animated
+    const isAnimated = patternType === 'contour' || patternType === 'bump' || patternType === 'wave'
+    
+    if (isAnimated) {
+      // Export as GIF for animated patterns
+      await exportAnimatedGIF()
+    } else {
+      // Export as PNG for static patterns
+      exportStaticPNG()
+    }
+  }
+
+  // Export static pattern as PNG
+  const exportStaticPNG = () => {
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -1744,12 +1761,71 @@ const ConsoleFrame = ({
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
-      link.download = 'pattern.png'
+      link.download = `pattern-${patternType}.png`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
       URL.revokeObjectURL(url)
     }, 'image/png')
+  }
+
+  // Export animated pattern as GIF
+  const exportAnimatedGIF = async () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    try {
+      // Import gif.js dynamically
+      const GIF = (await import('gif.js')).default
+      
+      // Create GIF with high quality settings
+      const gif = new GIF({
+        workers: 2,
+        quality: 10,
+        width: canvas.width,
+        height: canvas.height,
+        workerScript: '/gif.worker.js'
+      })
+
+      // Capture frames from the animated pattern
+      const frameCount = 30 // Number of frames for the GIF
+      const frameDelay = 100 // Delay between frames in ms
+      
+      for (let i = 0; i < frameCount; i++) {
+        // Create a temporary canvas for each frame
+        const frameCanvas = document.createElement('canvas')
+        frameCanvas.width = canvas.width
+        frameCanvas.height = canvas.height
+        const frameCtx = frameCanvas.getContext('2d')
+        
+        // Draw the current frame
+        frameCtx.drawImage(canvas, 0, 0)
+        
+        // Add frame to GIF
+        gif.addFrame(frameCanvas, { delay: frameDelay })
+        
+        // Wait for next frame
+        await new Promise(resolve => setTimeout(resolve, frameDelay))
+      }
+
+      // Render the GIF
+      gif.on('finished', (blob) => {
+        const url = URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `pattern-${patternType}.gif`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+      })
+
+      gif.render()
+    } catch (error) {
+      console.error('Error creating GIF:', error)
+      // Fallback to PNG if GIF creation fails
+      exportStaticPNG()
+    }
   }
 
   return (
@@ -1969,9 +2045,9 @@ const ConsoleFrame = ({
               
               {/* Download Icon */}
               <div className="w-8 h-9 flex items-center justify-center cursor-pointer" onClick={handleDownload}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="35" viewBox="0 0 32 35" fill="none">
-                  <path d="M1 25V34H31V25" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.3"/>
-                  <path d="M16 1V26.5M16 26.5L10 19M16 26.5L22.5 19" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.3"/>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 35" fill="none">
+                  <path d="M1 25V34H31V25" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity={isCartridgeInserted ? "1" : "0.3"}/>
+                  <path d="M16 1V26.5M16 26.5L10 19M16 26.5L22 19" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeOpacity={isCartridgeInserted ? "1" : "0.3"}/>
                 </svg>
               </div>
             </div>

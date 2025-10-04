@@ -22,6 +22,9 @@ UI / Craft
 - fix the change in positioning when the cartridge is added and removed from the system.
 - fix delay with upload area and cartridge still showing after the cartridge has been dropped in the console
 - fix keep console in the center of screen so there is no jump
+- add in some affordance (like a glow) to cartridge when it is hovering over the drop area
+- fix alignment of download svg
+- add in downloading loading animation
 
 
 Upload
