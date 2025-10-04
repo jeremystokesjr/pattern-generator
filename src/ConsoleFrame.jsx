@@ -76,7 +76,7 @@ const ConsoleFrame = ({
           frequency: 0.02,
           shapeSpacing: 8,
           shapeSize: 3,
-          waveSpacing: 60
+          waveSpacing: 40
         }
 
         p.setup = function() {
@@ -130,8 +130,11 @@ const ConsoleFrame = ({
           const flash = imageMetadata?.flash || false
           settings.shapeSize = flash ? 4 : 3
           
-          // Map ISO to number of waves
-          settings.numWaves = Math.max(6, Math.min(12, 8 + Math.floor(iso / 200)))
+          // Map ISO to number of waves - more waves for denser pattern
+          settings.numWaves = Math.max(10, Math.min(18, 12 + Math.floor(iso / 150)))
+          
+          // Dynamic wave spacing based on canvas height and number of waves
+          settings.waveSpacing = Math.max(25, Math.min(50, p.height / settings.numWaves))
         }
 
         function drawWavePattern() {
@@ -263,7 +266,7 @@ const ConsoleFrame = ({
           // Create larger canvas for zoom effect
           const zoomFactor = zoom
           const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
-          p.colorMode(p.HSB, 360, 100, 100, 100)
+          p.colorMode(p.RGB, 255, 255, 255, 255)
           p.background(0, 0, 0)
           
           // Set random seed for deterministic randomness
@@ -328,7 +331,7 @@ const ConsoleFrame = ({
                 baseX: x,
                 baseY: y,
                 size: p.random(settings.dotMinSize, settings.dotMaxSize), // Variable size for wave buildup
-                color: p.color(120, 80, 100) // Green color like the reference
+                color: p.color(255, 255, 255) // White color
               })
             }
           }
@@ -354,15 +357,8 @@ const ConsoleFrame = ({
             const sizeMultiplier = p.map(elevation, 0, 1, 0.6, 1.4) // Smaller in valleys, larger on peaks
             particle.size = p.map(elevation, 0, 1, settings.dotMinSize, settings.dotMaxSize) * sizeMultiplier
             
-            // Map elevation to color gradient like reference image
-            // Bright lime green for peaks, darker forest green for valleys
-            const brightness = p.map(elevation, 0, 1, 25, 95) // Wider range for more contrast
-            const saturation = p.map(elevation, 0, 1, 70, 100) // High saturation for vibrant greens
-            
-            // Always use green hue like reference
-            const hue = 120 // Green base
-            
-            particle.color = p.color(hue, saturation, brightness, 100) // Full opacity for crisp dots
+            // Use pure white for all shapes - no gray variation
+            particle.color = p.color(255, 255, 255, 255) // Pure white (#ffffff)
             
             // Draw shape
             drawShape(particle)
