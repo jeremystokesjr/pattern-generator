@@ -55,10 +55,18 @@
 - Change image of bump map to white
 - Add feature for toggle of animation
 
+## Bug Fixes Needed:
+- Change smoothness of the dial slider in color tint
+- Smooth animation so there is no jump when changing the color/tint
+- Add click on color selector to move the dial too
+
 ## Recent Changes:
 - ✅ Renamed frequency knob to scale knob - now controls dot size instead of particle count
 - ✅ Updated UI labels and debug display to reflect scale control
-- ✅ Implemented color tinting for all pattern types
+- ✅ Implemented color tinting for all pattern types (wave, bump, contour)
+- ✅ Fixed color slider positioning with white in center (50% position)
+- ✅ Fixed tinting logic for all pattern generation functions
+- ✅ All patterns now start white and can be tinted by moving the dial
 
 ---
 
