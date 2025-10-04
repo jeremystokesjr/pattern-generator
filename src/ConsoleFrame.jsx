@@ -1736,11 +1736,11 @@ const ConsoleFrame = ({
 
   return (
     <div className="flex gap-4">
-      {/* Debug Area - Left Side */}
-      <div className="w-64 p-3 bg-gray-800 rounded-lg text-white text-sm h-fit max-h-[800px] overflow-y-auto">
+      {/* Debug Area - Left Side - HIDDEN */}
+      {/* <div className="w-64 p-3 bg-gray-800 rounded-lg text-white text-sm h-fit max-h-[800px] overflow-y-auto">
         <div className="font-bold mb-2">Debug Info:</div>
         
-        {/* Pattern Controls */}
+        Pattern Controls
         <div className="mb-4">
           <div className="font-semibold text-blue-300 mb-1">Pattern Controls:</div>
           <div>Type: <span className="text-yellow-300">{patternType}</span></div>
@@ -1771,7 +1771,7 @@ const ConsoleFrame = ({
           </div>
         </div>
 
-        {/* Image Metadata */}
+        Image Metadata
         {(imageMetadata || isExtractingMetadata) && (
           <div className="mb-4">
             <div className="font-semibold text-green-300 mb-1 flex items-center gap-2">
@@ -1781,7 +1781,7 @@ const ConsoleFrame = ({
               )}
             </div>
             
-            {/* Camera Information */}
+            Camera Information
             {imageMetadata && (
               <div className="mb-2">
                 <div className="text-xs text-gray-400 mb-1">Camera:</div>
@@ -1797,7 +1797,7 @@ const ConsoleFrame = ({
               </div>
             )}
 
-            {/* Technical Settings */}
+            Technical Settings
             {imageMetadata && (
               <div className="mb-2">
                 <div className="text-xs text-gray-400 mb-1">Settings:</div>
@@ -1816,7 +1816,7 @@ const ConsoleFrame = ({
               </div>
             )}
 
-            {/* Temporal Information */}
+            Temporal Information
             {imageMetadata && (
               <div className="mb-2">
                 <div className="text-xs text-gray-400 mb-1">Time:</div>
@@ -1835,7 +1835,7 @@ const ConsoleFrame = ({
               </div>
             )}
 
-            {/* Image Properties */}
+            Image Properties
             {imageMetadata && (
               <div className="mb-2">
                 <div className="text-xs text-gray-400 mb-1">Properties:</div>
@@ -1845,7 +1845,7 @@ const ConsoleFrame = ({
               </div>
             )}
 
-            {/* GPS Information */}
+            GPS Information
             {imageMetadata && imageMetadata.gps && (
               <div className="mb-2">
                 <div className="text-xs text-gray-400 mb-1">Location:</div>
@@ -1858,7 +1858,7 @@ const ConsoleFrame = ({
               </div>
             )}
 
-            {/* Metadata Source Indicator */}
+            Metadata Source Indicator
             {imageMetadata && (
               <div className="mt-2 pt-2 border-t border-gray-600">
                 <div className="text-xs text-gray-400">
@@ -1867,7 +1867,7 @@ const ConsoleFrame = ({
               </div>
             )}
             
-            {/* Extraction Status */}
+            Extraction Status
             {isExtractingMetadata && !imageMetadata && (
               <div className="mt-2 pt-2 border-t border-gray-600">
                 <div className="text-xs text-gray-400">
@@ -1878,7 +1878,7 @@ const ConsoleFrame = ({
           </div>
         )}
 
-        {/* Image Status */}
+        Image Status
         <div>
           <div className="font-semibold text-purple-300 mb-1">Image Status:</div>
           <div>Uploaded: <span className="text-yellow-300">{uploadedImage ? 'Yes' : 'No'}</span></div>
@@ -1886,7 +1886,7 @@ const ConsoleFrame = ({
             <div>Size: <span className="text-yellow-300">{uploadedImage.width} × {uploadedImage.height}</span></div>
           )}
         </div>
-      </div>
+      </div> */}
 
       {/* Main Device */}
       <div className="relative bg-[#F1F1F1] rounded-xl shadow-lg p-6 w-[626px] h-[800px] flex-shrink-0 border-b-[10px] border-b-[#676767]">
@@ -1906,7 +1906,7 @@ const ConsoleFrame = ({
               {/* Add cartridge to start text - shows when cartridge uploaded but not inserted */}
               {uploadedImage && !isCartridgeInserted && !isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-white text-lg font-mono animate-pulse">
+                  <div className="text-white text-lg font-mono animate-pulse blur-[0.5px]">
                     Add cartridge to start
                   </div>
                 </div>
@@ -1915,14 +1915,17 @@ const ConsoleFrame = ({
               {/* Loading indicator - shows when cartridge is dropped and loading */}
               {isLoading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  {/* 8-bit style loading spinner */}
-                  <div className="relative w-16 h-16 mb-4">
-                    <div className="absolute inset-0 border-4 border-white border-opacity-30 rounded-sm"></div>
-                    <div className="absolute inset-0 border-4 border-transparent border-t-white rounded-sm animate-spin"></div>
+                  {/* Dot-matrix style loading animation */}
+                  <div className="mb-4 flex space-x-1">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '600ms' }}></div>
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse" style={{ animationDelay: '800ms' }}></div>
                   </div>
-                  {/* Loading text */}
-                  <div className="text-white text-lg font-mono">
-                    Loading...
+                  {/* Analyzing text */}
+                  <div className="text-white text-lg font-mono blur-[0.5px]">
+                    analyzing...
                   </div>
                 </div>
               )}
