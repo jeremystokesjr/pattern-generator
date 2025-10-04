@@ -31,6 +31,7 @@ const ConsoleFrame = ({
   const waveP5InstanceRef = useRef(null)
   const [isDragOver, setIsDragOver] = useState(false)
   const [showInsertedCartridge, setShowInsertedCartridge] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Drag and drop handlers
   const handleDragOver = (e) => {
@@ -53,8 +54,14 @@ const ConsoleFrame = ({
     if (data === 'cartridge') {
       console.log('Cartridge dropped on console!')
       setShowInsertedCartridge(true)
+      setIsLoading(true)
       console.log('showInsertedCartridge set to true')
-      onCartridgeInserted()
+      
+      // Simulate loading time (2 seconds) then trigger cartridge insertion
+      setTimeout(() => {
+        setIsLoading(false)
+        onCartridgeInserted()
+      }, 2000)
     }
   }
 
@@ -1897,10 +1904,25 @@ const ConsoleFrame = ({
               />
               
               {/* Add cartridge to start text - shows when cartridge uploaded but not inserted */}
-              {uploadedImage && !isCartridgeInserted && (
+              {uploadedImage && !isCartridgeInserted && !isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-white text-lg font-mono animate-pulse">
                     Add cartridge to start
+                  </div>
+                </div>
+              )}
+
+              {/* Loading indicator - shows when cartridge is dropped and loading */}
+              {isLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  {/* 8-bit style loading spinner */}
+                  <div className="relative w-16 h-16 mb-4">
+                    <div className="absolute inset-0 border-4 border-white border-opacity-30 rounded-sm"></div>
+                    <div className="absolute inset-0 border-4 border-transparent border-t-white rounded-sm animate-spin"></div>
+                  </div>
+                  {/* Loading text */}
+                  <div className="text-white text-lg font-mono">
+                    Loading...
                   </div>
                 </div>
               )}
@@ -1909,21 +1931,20 @@ const ConsoleFrame = ({
             {/* Icons on the right side */}
             <div className="absolute top-[70px] right-2 flex flex-col justify-between h-[277px]">
               {/* Eject Icon - Drop Target */}
-              <div 
-                className={`w-6 h-6 flex items-center justify-center cursor-pointer transition-all duration-200 ${
-                  isDragOver ? 'bg-[#FF9966] bg-opacity-30 rounded' : 
-                  isCartridgeInserted ? 'bg-[#FF9966] bg-opacity-50 rounded' : ''
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={isCartridgeInserted ? handleEjectClick : undefined}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="26" height="19" viewBox="0 0 26 19" fill="none">
-                  <path d="M0 16H26V19H0V16Z" fill="#FFFFFF" fillOpacity="0.3"/>
-                  <path d="M13 0L25.9904 11.25H0.00961876L13 0Z" fill="#FFFFFF" fillOpacity="0.3"/>
-                </svg>
-              </div>
+        <div 
+          className={`w-6 h-6 flex items-center justify-center cursor-pointer transition-all duration-200 ${
+            isDragOver ? 'bg-[#FF9966] bg-opacity-30 rounded' : ''
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={isCartridgeInserted ? handleEjectClick : undefined}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="26" height="19" viewBox="0 0 26 19" fill="none">
+            <path d="M0 16H26V19H0V16Z" fill={isCartridgeInserted ? "#FFFFFF" : "#FFFFFF"} fillOpacity={isCartridgeInserted ? "1" : "0.3"}/>
+            <path d="M13 0L25.9904 11.25H0.00961876L13 0Z" fill={isCartridgeInserted ? "#FFFFFF" : "#FFFFFF"} fillOpacity={isCartridgeInserted ? "1" : "0.3"}/>
+          </svg>
+        </div>
               
               {/* Download Icon */}
               <div className="w-8 h-9 flex items-center justify-center cursor-pointer" onClick={handleDownload}>
