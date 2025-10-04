@@ -68,6 +68,11 @@ Dials
 Rotation
 - Smooth the animation for rotation
 
+Zoom
+- fix sensitivity of the dial. Dial is too hard to use, not able to go backward.
+- generate more of the pattern so there is not any negative space around the image. Image should feel infinite
+
+
 ## Bug Fixes Completed:
 - ✅ Fixed dial controls responsiveness issues (Version 5)
   - Reduced throttling from 120fps to 60fps for better responsiveness

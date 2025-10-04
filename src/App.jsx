@@ -19,6 +19,7 @@ function App() {
   const [tint, setTint] = useState('#FFFFFF') // white for no tint, or color value
   const [removeBackground, setRemoveBackground] = useState(false) // background removal toggle
   const [zoom, setZoom] = useState(0) // zoom level: 0 = no zoom, positive = zoom in, negative = zoom out
+  const [animationSpeed, setAnimationSpeed] = useState(0) // animation speed: 1.0 = normal speed, 0.1 = slow, 3.0 = fast
 
   // Remove background from image
   const removeImageBackground = (image) => {
@@ -131,6 +132,11 @@ function App() {
     console.log('Zoom:', newZoom)
   }
 
+  const handleAnimationSpeedChange = (newAnimationSpeed) => {
+    setAnimationSpeed(newAnimationSpeed)
+    console.log('Animation Speed:', newAnimationSpeed)
+  }
+
   // Handle image removal
   const handleImageRemove = () => {
     setUploadedImage(null)
@@ -166,12 +172,14 @@ function App() {
             tint={tint}
             removeBackground={removeBackground}
             zoom={zoom}
+            animationSpeed={animationSpeed}
             onPatternTypeChange={handlePatternTypeChange}
             onFrequencyChange={handleFrequencyChange}
             onRotationChange={handleRotationChange}
             onScaleChange={handleScaleChange}
             onTintChange={handleTintChange}
             onZoomChange={handleZoomChange}
+            onAnimationSpeedChange={handleAnimationSpeedChange}
             onImageRemove={handleImageRemove}
             onRemoveBackgroundChange={handleRemoveBackgroundChange}
           />

@@ -12,15 +12,19 @@ const ConsoleFrame = ({
   tint,
   removeBackground,
   zoom,
+  animationSpeed,
   onPatternTypeChange,
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
   onTintChange,
   onZoomChange,
+  onAnimationSpeedChange,
   onImageRemove
 }) => {
   const canvasRef = useRef(null)
+  const p5InstanceRef = useRef(null)
+  const animationIdRef = useRef(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -33,7 +37,7 @@ const ConsoleFrame = ({
     
     // Generate pattern based on pattern type
     generatePattern(ctx, canvas.width, canvas.height)
-  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom])
+  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed])
 
   // Generate pattern based on pattern type
   const generatePattern = async (ctx, width, height) => {
@@ -78,7 +82,7 @@ const ConsoleFrame = ({
           shapeSpacing: 8,
           shapeSize: 3,
           waveSpacing: 40,
-          animationSpeed: 0.01
+          animationSpeed: Math.abs(animationSpeed) * 0.01 // Use dial control (-1.0 to +1.0) scaled to 0 to 0.01
         }
 
         p.setup = function() {
@@ -140,8 +144,7 @@ const ConsoleFrame = ({
           // Dynamic wave spacing based on canvas height and number of waves
           settings.waveSpacing = Math.max(25, Math.min(50, p.height / settings.numWaves))
           
-          // Map ISO to animation speed for future undulating movement
-          settings.animationSpeed = Math.max(0.005, Math.min(0.02, 0.01 + (iso / 20000)))
+          // Animation speed is now controlled by the dial, not metadata
         }
 
         function drawWavePattern() {
@@ -172,8 +175,8 @@ const ConsoleFrame = ({
             
             // Draw shapes along the sinusoidal wave path
             for (let x = 0; x < p.width; x += settings.shapeSpacing) {
-              // Calculate sinusoidal wave position (no rotation in wave phase)
-              const waveY = baseY + Math.sin(x * settings.frequency) * settings.amplitude
+              // Calculate sinusoidal wave position with animation
+              const waveY = baseY + Math.sin(x * settings.frequency + time) * settings.amplitude
               
               // Apply tinting to white base color
               if (tint && tint !== '#FFFFFF') {
@@ -292,7 +295,7 @@ const ConsoleFrame = ({
           dotMinSize: 1,
           dotMaxSize: 8,
           noiseScale: 0.02,
-          animationSpeed: 0.01
+          animationSpeed: Math.abs(animationSpeed) * 0.005 // Use dial control (-1.0 to +1.0) scaled to 0 to 0.005
         }
 
         p.setup = function() {
@@ -347,8 +350,7 @@ const ConsoleFrame = ({
           // Map ISO to noise scale for smooth undulation
           settings.noiseScale = Math.max(0.02, Math.min(0.04, 0.03 + (iso / 20000)))
           
-          // Slower animation for more organic feel
-          settings.animationSpeed = Math.max(0.002, Math.min(0.008, 0.005 + (iso / 20000)))
+          // Animation speed is now controlled by the dial, not metadata
         }
 
         function initializeParticles() {
@@ -738,7 +740,7 @@ const ConsoleFrame = ({
           contourSpacing: 8
         }
         let time = 0
-        let animationSpeed = 0.005
+        let localAnimationSpeed = Math.abs(animationSpeed) * 0.003 // Use dial control (-1.0 to +1.0) scaled to 0 to 0.003
 
         p.setup = function() {
           // Create canvas at normal size
@@ -759,7 +761,7 @@ const ConsoleFrame = ({
           p.background(0, 0, 0)
           
           // Update time for animation
-          time += animationSpeed
+          time += localAnimationSpeed
           
           // Draw contour lines made of shapes
           drawShapeContours()
@@ -1200,12 +1202,14 @@ const ConsoleFrame = ({
             scale={scale}
             tint={tint}
             zoom={zoom}
+            animationSpeed={animationSpeed}
             onPatternTypeChange={onPatternTypeChange}
             onFrequencyChange={onFrequencyChange}
             onRotationChange={onRotationChange}
             onScaleChange={onScaleChange}
             onTintChange={onTintChange}
             onZoomChange={onZoomChange}
+            onAnimationSpeedChange={onAnimationSpeedChange}
           />
         </div>
       </div>
