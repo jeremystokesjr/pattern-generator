@@ -70,13 +70,15 @@ const ConsoleFrame = ({
       
       // Create P5.js sketch for wave pattern
       const sketch = (p) => {
+        let time = 0
         let settings = {
           numWaves: 8,
           amplitude: 40,
           frequency: 0.02,
           shapeSpacing: 8,
           shapeSize: 3,
-          waveSpacing: 40
+          waveSpacing: 40,
+          animationSpeed: 0.01
         }
 
         p.setup = function() {
@@ -97,7 +99,10 @@ const ConsoleFrame = ({
           // Clear background
           p.background(0, 0, 0)
           
-          // Draw static wave pattern
+          // Update time for animation (prepared for future use)
+          time += settings.animationSpeed
+          
+          // Draw wave pattern
           drawWavePattern()
         }
 
@@ -135,6 +140,9 @@ const ConsoleFrame = ({
           
           // Dynamic wave spacing based on canvas height and number of waves
           settings.waveSpacing = Math.max(25, Math.min(50, p.height / settings.numWaves))
+          
+          // Map ISO to animation speed for future undulating movement
+          settings.animationSpeed = Math.max(0.005, Math.min(0.02, 0.01 + (iso / 20000)))
         }
 
         function drawWavePattern() {
@@ -515,7 +523,7 @@ const ConsoleFrame = ({
           // Color mode based on season (if available)
           if (imageMetadata?.season === 'winter' || imageMetadata?.season === 'spring') {
             settings.colorMode = 'monochrome'
-          } else {
+        } else {
             settings.colorMode = 'rainbow'
           }
         }
