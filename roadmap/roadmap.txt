@@ -57,39 +57,65 @@
 
 ## Bug Fixes Needed:
 
-Color Tinter
+### Color Tinter
 - Change smoothness of the dial slider in color tint
 - Smooth animation so there is no jump when changing the color/tint
 - Add click on color selector to move the dial too
 
-Dials
-- Improve the responsiveness and UX of turning the dials
+### Zoom Enhancement
+- Generate more of the pattern so there is not any negative space around the image. Image should feel infinite
+- Consider extending pattern generation beyond canvas bounds for seamless infinite feel
 
-Rotation
-- Smooth the animation for rotation
-
-Zoom
-- fix sensitivity of the dial. Dial is too hard to use, not able to go backward.
-- generate more of the pattern so there is not any negative space around the image. Image should feel infinite
+### Future Enhancements
+- Add more pattern types (bouncing, static, topographic)
+- Improve pattern generation performance
+- Add pattern export functionality
+- Enhanced metadata visualization
 
 
 ## Bug Fixes Completed:
-- ✅ Fixed dial controls responsiveness issues (Version 5)
+
+### Version 5.x - Complete Dial & Animation System Overhaul
+- ✅ **Dial Controls Responsiveness** (v5.0)
   - Reduced throttling from 120fps to 60fps for better responsiveness
   - Reduced rotation dial dead zone from 10px to 3px
   - Added preventDefault() to mouse events to prevent browser interference
   - Improved visual transition speed from 75ms to 50ms
   - Enhanced event handling with proper stopPropagation()
-- ✅ Updated rotation dial range from 0°-360° to -180° to +180°
-- ✅ Ensured 0° is at 12 o'clock position (middle) for intuitive control
-- ✅ Improved rotation dial usability with dead zone and reduced sensitivity
-- ✅ Fixed pattern rotation to rotate entire patterns (Version 5.1)
+  - Updated rotation dial range from 0°-360° to -180° to +180°
+  - Ensured 0° is at 12 o'clock position (middle) for intuitive control
+
+- ✅ **Pattern Rotation System** (v5.1)
   - Fixed wave pattern rotation to rotate entire pattern, not just wave phase
   - Applied proper P5.js transformation matrix rotation to all patterns
   - Fixed bump pattern rotation for entire particle field
   - Fixed contour pattern rotation for entire contour system
   - All patterns now rotate as a whole around center point
-  - Changed default pattern to 'wave' for testing
+  - Removed rotation amount display from UI for cleaner interface
+
+- ✅ **Zoom Dial Implementation** (v5.2)
+  - Changed left dial from scale to zoom control
+  - Implemented proper zoom functionality using P5.js scale transformations
+  - Fixed zoom sensitivity and ensured 0 shows full pattern
+  - Removed old canvas size manipulation, implemented proper zoom scaling
+  - Zoom range: -1.0 to +1.0 with 0 at center (no zoom)
+
+- ✅ **Animation Speed Dial** (v5.3)
+  - Added animation speed parameter to App.jsx state
+  - Updated right dial from 'scale' to 'animationSpeed' control
+  - Implemented animation speed logic in pattern generation
+  - Updated right dial label from "scale" to "speed"
+  - Animation speed range: -1.0 to +1.0 (slow > 0 > fast)
+  - 0 positioned at 12 o'clock (no animation), negative = slow, positive = fast
+
+- ✅ **Continuous Animation System** (v5.4 & v5.5)
+  - Fixed animation system to make patterns animate continuously
+  - Contour pattern: Continuous elevation-based contour lines with marching squares
+  - Bump pattern: Continuous 3D particle system with Perlin noise displacement
+  - Wave pattern: Flowing sine wave patterns with metadata-driven parameters
+  - Preserved all complex metadata mapping and particle systems
+  - Proper P5.js instance management with cleanup functions
+  - Real-time updates for rotation, zoom, and animation speed across all patterns
 
 ## Recent Changes:
 - ✅ Renamed frequency knob to scale knob - now controls dot size instead of particle count
@@ -220,9 +246,114 @@ npm run dev:all
 └── .gitignore                   # Excludes node_modules, uploads/
 ```
 
-## 🏷️ Version Tags
-- `v1.0-layout-complete` - Previous version with basic layout
-- `v1.0-exiftool-integration` - Current version with ExifTool integration
+## 🏷️ Version History
+
+### Version 5.x - Dial Controls & Animation System
+- **v5.5-complete-animation-system** - Complete continuous animation system for all patterns
+  - ✅ Wave pattern: Flowing sine wave patterns with metadata-driven parameters
+  - ✅ Contour pattern: Elevation-based contour lines with marching squares algorithm
+  - ✅ Bump pattern: 3D particle system with Perlin noise displacement
+  - ✅ All patterns now animate continuously while preserving sophisticated generation logic
+  - ✅ Real-time updates for rotation, zoom, and animation speed across all patterns
+  - ✅ Proper P5.js instance management and cleanup for all animated patterns
+
+- **v5.4-continuous-animation** - Implement continuous animation for contour and bump patterns
+  - ✅ Fixed animation system to make patterns animate continuously
+  - ✅ Contour pattern: Continuous elevation-based contour lines with marching squares
+  - ✅ Bump pattern: Continuous 3D particle system with Perlin noise displacement
+  - ✅ Preserved all complex metadata mapping and particle systems
+  - ✅ Proper P5.js instance management with cleanup functions
+
+- **v5.3-animation-speed-dial** - Implement animation speed dial functionality
+  - ✅ Added animation speed parameter to App.jsx state
+  - ✅ Updated right dial from 'scale' to 'animationSpeed' control
+  - ✅ Implemented animation speed logic in pattern generation
+  - ✅ Updated right dial label from "scale" to "speed"
+  - ✅ Animation speed range: -1.0 to +1.0 (slow > 0 > fast)
+  - ✅ 0 positioned at 12 o'clock (no animation), negative = slow, positive = fast
+
+- **v5.2-zoom-dial** - Implement zoom dial functionality
+  - ✅ Changed left dial from scale to zoom control
+  - ✅ Updated zoom dial drag logic and range (-1.0 to +1.0)
+  - ✅ Updated zoom dial visual feedback with proper rotation mapping
+  - ✅ Implemented proper zoom functionality using P5.js scale transformations
+  - ✅ Fixed zoom sensitivity and ensured 0 shows full pattern
+  - ✅ Removed old canvas size manipulation, implemented proper zoom scaling
+
+- **v5.1-pattern-rotation-fix** - Fix pattern rotation to rotate entire patterns
+  - ✅ Fixed wave pattern rotation to rotate entire pattern, not just wave phase
+  - ✅ Applied proper P5.js transformation matrix rotation to all patterns
+  - ✅ Fixed bump pattern rotation for entire particle field
+  - ✅ Fixed contour pattern rotation for entire contour system
+  - ✅ All patterns now rotate as a whole around center point
+  - ✅ Changed default pattern to 'wave' for testing
+  - ✅ Removed rotation amount display from UI
+
+- **v5.0-dial-responsiveness** - Fix dial controls responsiveness
+  - ✅ Reduced throttling from 120fps to 60fps for better responsiveness
+  - ✅ Reduced rotation dial dead zone from 10px to 3px
+  - ✅ Added preventDefault() to mouse events to prevent browser interference
+  - ✅ Improved visual transition speed from 75ms to 50ms
+  - ✅ Enhanced event handling with proper stopPropagation()
+  - ✅ Updated rotation dial range from 0°-360° to -180° to +180°
+  - ✅ Ensured 0° is at 12 o'clock position (middle) for intuitive control
+
+### Version 4.x - Tinting System
+- **v4** - Complete tinting feature implementation
+  - ✅ Complete tinting feature implementation
+  - ✅ Fixed tinting for contour pattern
+  - ✅ Fixed tinting for wave and bump patterns
+  - ✅ Comprehensive color tinting system across all patterns
+
+### Version 3.x - Tinting Foundation
+- **v3** - Implement tinting feature with white as center position
+  - ✅ Implemented tinting feature with white as center position
+  - ✅ Color tinting system for pattern generation
+  - ✅ White positioned at center (50%) for intuitive control
+
+### Version 2.x - Pattern Development & Enhancement
+- **v2.6** - Prepared all patterns for future undulating animation
+  - ✅ Prepared all patterns for future undulating animation
+  - ✅ Enhanced pattern architecture for animation support
+
+- **v2.5** - Enhanced wave pattern density and fixed bump pattern colors
+  - ✅ Enhanced wave pattern density
+  - ✅ Fixed bump pattern colors
+  - ✅ Improved pattern visual quality
+
+- **v2.4** - Enhanced wave pattern with P5.js and metadata-driven shapes
+  - ✅ Enhanced wave pattern with P5.js integration
+  - ✅ Metadata-driven shape generation
+  - ✅ Advanced wave pattern algorithms
+
+- **v2.3** - Enhanced bump pattern with metadata-driven shapes and progressive scaling
+  - ✅ Enhanced bump pattern with metadata-driven shapes
+  - ✅ Progressive scaling implementation
+  - ✅ Advanced bump pattern algorithms
+
+- **v2.2** - Implement P5.js contour pattern with authentic topographic generation
+  - ✅ Implemented P5.js contour pattern
+  - ✅ Authentic topographic generation
+  - ✅ Advanced contour algorithms
+
+- **v2.1** - Working metadata-driven contour pattern with individual shapes
+  - ✅ Working metadata-driven contour pattern
+  - ✅ Individual shape generation
+  - ✅ Basic contour pattern implementation
+
+### Version 1.x - Foundation & Metadata
+- **v1.0-exiftool-integration** - ExifTool integration for accurate metadata extraction
+  - ✅ Complete integration of ExifTool for accurate image metadata extraction
+  - ✅ Node.js Express server running on port 3001
+  - ✅ Enhanced debug UI with organized metadata display
+  - ✅ Accurate metadata detection for phone type, lens type, camera settings
+  - ✅ Support for HEIC, JPEG, PNG, TIFF formats
+  - ✅ Fallback system for metadata extraction
+
+- **v1.0-layout-complete** - Basic layout and foundation
+  - ✅ Initial project structure and basic UI layout
+  - ✅ Basic pattern generation system
+  - ✅ File upload functionality
 
 ## 🐛 Known Issues & Solutions
 1. **Server ES Module Error**: Fixed by converting server.js to ES modules
