@@ -153,12 +153,6 @@ function App() {
   return (
     <div className="min-h-screen bg-[#222222] p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Pattern Generator</h1>
-          <p className="text-gray-300">Upload an image to extract metadata and generate patterns</p>
-        </div>
-        
         {/* Main Layout - Console and Upload Area */}
         <div className="flex justify-center items-start gap-8">
           <ConsoleFrame 

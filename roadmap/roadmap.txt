@@ -1,5 +1,37 @@
 # Pattern Generator Roadmap
 
+
+###
+Bug Fixes
+
+UI / Craft
+- extend pattern generation so it appears infinite
+- add in logic to pattern is loaded / generated 
+- add ability to drag and drop game card into console to start the pattern generation
+- add eject function
+- add glow effect to the eject and download functions
+- add the image downloaded function (static and animated)
+- fix the UI does not have padding on the right side (right edge of tint and speed dials)
+- fix jittieriness when the dials are rotated. The pattern seems to redraw each time the controls are changed, this should be smoother.
+
+Pattern Controls
+-
+
+
+Tint
+- add ability to click on color selector to change the color input type
+- make the dial pad in the tint section smaller
+
+Dials
+- fix sensitivity of the dials, the dials are too hard to turn
+- make dials stop before reaching 6oclock so it's clear that they don't turn all the way in a continuous circle
+
+Zoom Dial
+
+
+Rotation Dial
+
+Speed Dial
 ## Pattern Options Available
 
 ### Currently Implemented in Console (3 options):
