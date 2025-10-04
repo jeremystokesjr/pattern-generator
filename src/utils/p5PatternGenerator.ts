@@ -1282,7 +1282,7 @@ function mapMetadataToPatternType(metadata: ImageMetadata): string {
     
     // Front camera - simple, clean patterns
     if (lensLower.includes('front')) {
-      return 'bouncing'; // Bouncing animation for selfies
+      return 'bump'; // 3D bump surface for selfies
     }
     
     // Wide lens - balanced patterns
@@ -1296,21 +1296,21 @@ function mapMetadataToPatternType(metadata: ImageMetadata): string {
     if (metadata.iso <= 100) {
       return 'wave'; // Clean, smooth patterns for low ISO
     } else if (metadata.iso <= 400) {
-      return 'contour'; // Balanced patterns for medium ISO
+      return 'bump'; // 3D bump patterns for medium ISO
     } else {
-      return 'static'; // Static patterns for high ISO/noisy images
+      return 'contour'; // Contour patterns for high ISO/noisy images
     }
   }
   
   // Pattern selection based on flash usage
   if (metadata.flash) {
-    return 'bouncing'; // Dynamic patterns for flash-lit images
+    return 'bump'; // 3D bump patterns for flash-lit images
   }
   
   // Pattern selection based on time of day
   if (metadata.timeOfDay) {
     if (metadata.timeOfDay === 'night') {
-      return 'static'; // Static patterns for night shots
+      return 'contour'; // Contour patterns for night shots
     } else {
       return 'wave'; // Flowing patterns for day shots
     }

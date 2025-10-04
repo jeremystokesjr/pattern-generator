@@ -18,6 +18,7 @@ function App() {
   const [scale, setScale] = useState(1)
   const [tint, setTint] = useState(null) // null for no tint, or color value
   const [removeBackground, setRemoveBackground] = useState(false) // background removal toggle
+  const [zoom, setZoom] = useState(1.5) // zoom level for contour pattern (1.0 = no zoom, higher = more zoom)
 
   // Remove background from image
   const removeImageBackground = (image) => {
@@ -125,6 +126,11 @@ function App() {
     console.log('Tint:', color)
   }
 
+  const handleZoomChange = (newZoom) => {
+    setZoom(newZoom)
+    console.log('Zoom:', newZoom)
+  }
+
   // Handle image removal
   const handleImageRemove = () => {
     setUploadedImage(null)
@@ -159,11 +165,13 @@ function App() {
             scale={scale}
             tint={tint}
             removeBackground={removeBackground}
+            zoom={zoom}
             onPatternTypeChange={handlePatternTypeChange}
             onFrequencyChange={handleFrequencyChange}
             onRotationChange={handleRotationChange}
             onScaleChange={handleScaleChange}
             onTintChange={handleTintChange}
+            onZoomChange={handleZoomChange}
             onImageRemove={handleImageRemove}
             onRemoveBackgroundChange={handleRemoveBackgroundChange}
           />

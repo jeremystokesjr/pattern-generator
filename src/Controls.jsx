@@ -6,11 +6,13 @@ const Controls = ({
   rotation, 
   scale, 
   tint,
+  zoom,
   onPatternTypeChange,
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
-  onTintChange
+  onTintChange,
+  onZoomChange
 }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [dragType, setDragType] = useState(null)
@@ -83,6 +85,9 @@ const Controls = ({
       case 'scale':
         setDragStartValue(scale)
         break
+      case 'zoom':
+        setDragStartValue(zoom)
+        break
       default:
         break
     }
@@ -139,6 +144,10 @@ const Controls = ({
       case 'scale':
         newValue = Math.max(0.1, Math.min(3, dragStartValue + deltaY * sensitivity * 0.05)) // Reduced sensitivity
         onScaleChange(Math.round(newValue * 100) / 100) // Round to 2 decimals
+        break
+      case 'zoom':
+        newValue = Math.max(1.0, Math.min(5.0, dragStartValue + deltaY * sensitivity * 0.1)) // Zoom range 1.0 to 5.0
+        onZoomChange(Math.round(newValue * 100) / 100) // Round to 2 decimals
         break
       case 'colorSlider':
         // Color slider drag logic: drag up/down to change color
@@ -491,6 +500,7 @@ const Controls = ({
           {/* Scale Label */}
           <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 text-gray-700 text-sm font-medium">scale</div>
         </div>
+
       </div>
     </div>
   )

@@ -10,11 +10,15 @@ const ConsoleFrame = ({
   rotation, 
   scale, 
   tint,
+  removeBackground,
+  zoom,
   onPatternTypeChange,
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
-  onTintChange
+  onTintChange,
+  onZoomChange,
+  onImageRemove
 }) => {
   const canvasRef = useRef(null)
 
@@ -29,7 +33,7 @@ const ConsoleFrame = ({
     
     // Generate pattern based on pattern type
     generatePattern(ctx, canvas.width, canvas.height)
-  }, [uploadedImage, tint, patternType, frequency, rotation, scale])
+  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom])
 
   // Generate pattern based on pattern type
   const generatePattern = async (ctx, width, height) => {
@@ -43,7 +47,7 @@ const ConsoleFrame = ({
         generateWavePattern(ctx, width, height)
         break
       case 'bump':
-        generateBumpPattern(ctx, width, height)
+        await generateBumpPattern(ctx, width, height)
         break
       case 'contour':
         await generateContourPattern(ctx, width, height)
@@ -95,22 +99,429 @@ const ConsoleFrame = ({
     }
   }
 
-  // Bump pattern generation
-  const generateBumpPattern = (ctx, width, height) => {
-    const spacing = 30 * scale
-    const bumpSize = 20 * scale
+  // Bump pattern generation using P5.js for 3D undulating surface
+  const generateBumpPattern = async (ctx, width, height) => {
+    // Set background to black
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, width, height)
     
-    ctx.fillStyle = tint || '#ffffff'
-    
-    for (let x = spacing; x < width; x += spacing) {
-      for (let y = spacing; y < height; y += spacing) {
-        const offsetX = Math.sin(x * 0.01 + rotation * Math.PI / 180) * 10
-        const offsetY = Math.cos(y * 0.01 + rotation * Math.PI / 180) * 10
-        
-        ctx.beginPath()
-        ctx.arc(x + offsetX, y + offsetY, bumpSize, 0, Math.PI * 2)
-        ctx.fill()
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
+      
+      // Create P5.js sketch for bump pattern
+      const sketch = (p) => {
+        let particles = []
+        let time = 0
+        let settings = {
+          spacing: 20,
+          dotMinSize: 1,
+          dotMaxSize: 8,
+          noiseScale: 0.02,
+          animationSpeed: 0.01
+        }
+
+        p.setup = function() {
+          // Create larger canvas for zoom effect
+          const zoomFactor = zoom
+          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          p.colorMode(p.HSB, 360, 100, 100, 100)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          p.noiseSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToBumpSettings()
+          
+          // Initialize particles
+          initializeParticles()
+        }
+
+        p.draw = function() {
+          // Clear background
+          p.background(0, 0, 0)
+          
+          // Update time for animation
+          time += settings.animationSpeed
+          
+          // Draw bump pattern
+          drawBumpPattern()
+        }
+
+        function mapMetadataToBumpSettings() {
+          // Get shape from metadata
+          let shape = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shape = 'circle'
+            else if (lens.includes('wide')) shape = 'rectangle'
+            else if (lens.includes('telephoto')) shape = 'triangle'
+            else if (lens.includes('macro')) shape = 'rhombus'
+            else if (lens.includes('zoom')) shape = 'star'
+          }
+          p.shapeType = shape
+          
+          // Map ISO to spacing (higher ISO = denser grid) - much denser for reference look
+          const iso = imageMetadata?.iso || 200
+          settings.spacing = Math.max(6, Math.min(12, 8 - (iso / 200)))
+          
+          // Progressive scaling for wave buildup - size varies with elevation
+          settings.dotMinSize = 1.5 // Smaller base size
+          settings.dotMaxSize = 4.5 // Larger size for peaks
+          
+          // Map ISO to noise scale for smooth undulation
+          settings.noiseScale = Math.max(0.02, Math.min(0.04, 0.03 + (iso / 20000)))
+          
+          // Slower animation for more organic feel
+          settings.animationSpeed = Math.max(0.002, Math.min(0.008, 0.005 + (iso / 20000)))
+        }
+
+        function initializeParticles() {
+          particles = []
+          const zoomFactor = zoom
+          
+          for (let x = 0; x < p.width; x += settings.spacing) {
+            for (let y = 0; y < p.height; y += settings.spacing) {
+              particles.push({
+                x: x,
+                y: y,
+                baseX: x,
+                baseY: y,
+                size: p.random(settings.dotMinSize, settings.dotMaxSize), // Variable size for wave buildup
+                color: p.color(120, 80, 100) // Green color like the reference
+              })
+            }
+          }
+        }
+
+        function drawBumpPattern() {
+          particles.forEach(particle => {
+            // Apply Perlin noise displacement for 3D bump effect
+            const noiseX = p.noise(particle.baseX * settings.noiseScale, particle.baseY * settings.noiseScale, time)
+            const noiseY = p.noise(particle.baseX * settings.noiseScale + 1000, particle.baseY * settings.noiseScale + 1000, time)
+            
+            // Calculate displacement based on noise (creates peaks and valleys) - smaller displacement for smoother look
+            const displacementX = p.map(noiseX, 0, 1, -15, 15)
+            const displacementY = p.map(noiseY, 0, 1, -15, 15)
+            
+            particle.x = particle.baseX + displacementX
+            particle.y = particle.baseY + displacementY
+            
+            // Calculate elevation for color variation (3D effect) - use same noise for consistency
+            const elevation = p.noise(particle.baseX * settings.noiseScale * 0.7, particle.baseY * settings.noiseScale * 0.7, time * 0.3)
+            
+            // Progressive scaling for wave buildup - size varies with elevation
+            const sizeMultiplier = p.map(elevation, 0, 1, 0.6, 1.4) // Smaller in valleys, larger on peaks
+            particle.size = p.map(elevation, 0, 1, settings.dotMinSize, settings.dotMaxSize) * sizeMultiplier
+            
+            // Map elevation to color gradient like reference image
+            // Bright lime green for peaks, darker forest green for valleys
+            const brightness = p.map(elevation, 0, 1, 25, 95) // Wider range for more contrast
+            const saturation = p.map(elevation, 0, 1, 70, 100) // High saturation for vibrant greens
+            
+            // Always use green hue like reference
+            const hue = 120 // Green base
+            
+            particle.color = p.color(hue, saturation, brightness, 100) // Full opacity for crisp dots
+            
+            // Draw shape
+            drawShape(particle)
+          })
+        }
+
+        function drawShape(particle) {
+          p.fill(particle.color)
+          p.noStroke()
+          
+          switch (p.shapeType) {
+            case 'circle':
+              p.ellipse(particle.x, particle.y, particle.size)
+              break
+            case 'rectangle':
+              p.rect(particle.x - particle.size/2, particle.y - particle.size/2, particle.size, particle.size)
+              break
+            case 'triangle':
+              p.triangle(
+                particle.x, particle.y - particle.size,
+                particle.x - particle.size, particle.y + particle.size,
+                particle.x + particle.size, particle.y + particle.size
+              )
+              break
+            case 'rhombus':
+              p.beginShape()
+              p.vertex(particle.x, particle.y - particle.size)
+              p.vertex(particle.x - particle.size, particle.y)
+              p.vertex(particle.x, particle.y + particle.size)
+              p.vertex(particle.x + particle.size, particle.y)
+              p.endShape(p.CLOSE)
+              break
+            case 'star':
+              drawStar(particle.x, particle.y, particle.size)
+              break
+          }
+        }
+
+        function drawStar(x, y, size) {
+          const spikes = 5
+          const outerRadius = size
+          const innerRadius = size * 0.4
+          
+          p.beginShape()
+          for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const angle = (i * p.PI) / spikes
+            const px = x + p.cos(angle) * radius
+            const py = y + p.sin(angle) * radius
+            p.vertex(px, py)
+          }
+          p.endShape(p.CLOSE)
+        }
       }
+      
+      // Create and run the P5.js sketch
+      const p5Instance = new p5(sketch, canvasRef.current)
+      
+      // Wait for the sketch to render
+      setTimeout(() => {
+        // Copy P5.js canvas to our main canvas with zoom in effect
+        const p5Canvas = p5Instance.canvas
+        const zoomFactor = zoom
+        
+        // Show only the center portion of the larger pattern (zoom in effect)
+        const sourceX = (p5Canvas.width - width) / 2
+        const sourceY = (p5Canvas.height - height) / 2
+        
+        // Draw only a portion of the larger canvas to our display canvas
+        ctx.drawImage(
+          p5Canvas, 
+          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
+          0, 0, width, height               // Destination: full display canvas
+        )
+        
+        // Clean up P5.js instance
+        p5Instance.remove()
+      }, 100)
+      
+    } catch (error) {
+      console.error('Error loading P5.js:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
+    }
+  }
+
+  // Static Contours pattern generation using P5.js (mirrored from generative_art)
+  const generateStaticContoursPattern = async (ctx, width, height) => {
+    // Set background to black
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, width, height)
+    
+    try {
+      // Import P5.js dynamically
+      const p5Module = await import('p5')
+      const p5 = p5Module.default
+      
+      // Create P5.js sketch for static contours pattern
+      const sketch = (p) => {
+        let settings = {
+          spacing: 8,
+          dotMinSize: 1,
+          dotMaxSize: 5,
+          noiseScale: 0.05,
+          colorMode: 'rainbow'
+        }
+        let time = 0
+        let animationSpeed = 0.01
+
+        p.setup = function() {
+          // Create larger canvas for zoom effect
+          const zoomFactor = zoom
+          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
+          p.colorMode(p.HSB, 360, 100, 100, 100)
+          p.background(0, 0, 0)
+          
+          // Set random seed for deterministic randomness
+          p.randomSeed(42)
+          p.noiseSeed(42)
+          
+          // Map metadata to settings
+          mapMetadataToStaticSettings()
+        }
+
+        p.draw = function() {
+          // Clear background with slight fade for motion blur effect
+          p.fill(0, 0, 0, 20)
+          p.noStroke()
+          p.rect(0, 0, p.width, p.height)
+          
+          // Update time for animation
+          time += animationSpeed
+          
+          // Always render the animated pattern
+          renderAnimatedPattern()
+        }
+
+        function mapMetadataToStaticSettings() {
+          // Map ISO to spacing (higher ISO = denser grid) - Larger scale for better visibility
+          const iso = imageMetadata?.iso || 200
+          settings.spacing = Math.max(4, Math.min(12, 10 - (iso / 300)))
+          
+          // Map ISO to dot size range (dramatic size variation)
+          settings.dotMinSize = Math.max(0.5, Math.min(2.0, 1.0 - (iso / 1000)))
+          settings.dotMaxSize = Math.max(4.0, Math.min(12.0, 8.0 + (iso / 200)))
+          
+          // Map ISO to noise scale (more detail for topographic contours)
+          settings.noiseScale = Math.max(0.02, Math.min(0.08, 0.04 + (iso / 15000)))
+          
+          // Map ISO to animation speed
+          animationSpeed = Math.max(0.003, Math.min(0.02, 0.008 + (iso / 12000)))
+          
+          // Color mode based on season (if available)
+          if (imageMetadata?.season === 'winter' || imageMetadata?.season === 'spring') {
+            settings.colorMode = 'monochrome'
+          } else {
+            settings.colorMode = 'rainbow'
+          }
+        }
+
+        function renderAnimatedPattern() {
+          // Ensure spacing is valid to prevent crashes
+          if (!settings.spacing || settings.spacing < 1) {
+            settings.spacing = 6 // Default fallback
+          }
+          
+          const cols = Math.floor(p.width / settings.spacing)
+          const rows = Math.floor(p.height / settings.spacing)
+          
+          for (let x = 0; x < cols; x++) {
+            for (let y = 0; y < rows; y++) {
+              const baseX = x * settings.spacing
+              const baseY = y * settings.spacing
+              
+              // Calculate noise values for this position
+              const noiseX = baseX * settings.noiseScale
+              const noiseY = baseY * settings.noiseScale
+              
+              // Add subtle grid warping for organic topographic flow
+              const warpX = p.noise(noiseX + 3000, noiseY + 3000, time * 0.2) * 6 - 3 // -3 to +3 pixel warp
+              const warpY = p.noise(noiseX + 4000, noiseY + 4000, time * 0.2) * 6 - 3 // -3 to +3 pixel warp
+              
+              // Add subtle animated undulation on top of warping
+              const undulationX = p.noise(noiseX + 5000, noiseY + 5000, time) * 2 - 1 // -1 to +1 pixel shift
+              const undulationY = p.noise(noiseX + 6000, noiseY + 6000, time) * 2 - 1 // -1 to +1 pixel shift
+              
+              const screenX = baseX + warpX + undulationX
+              const screenY = baseY + warpY + undulationY
+              
+              // Get noise value for size variation (also animated)
+              const sizeNoise = p.noise(noiseX, noiseY, time * 0.5)
+              const dotSize = p.map(sizeNoise, 0, 1, settings.dotMinSize, settings.dotMaxSize)
+              
+              // Get noise value for brightness variation (contour-like elevation effect)
+              const brightnessNoise = p.noise(noiseX + 1000, noiseY + 1000, time * 0.3)
+              // Create dramatic brightness contrast for topographic effect - bright peaks, dark valleys
+              const brightness = p.map(brightnessNoise, 0, 1, 10, 100)
+              
+              // Use green color with dramatic brightness variation for topographic effect
+              p.fill(120, 80, brightness, 90) // Green hue, high saturation, variable brightness
+              
+              p.noStroke()
+              
+              // Draw the shape based on lens type
+              drawShape(screenX, screenY, dotSize)
+            }
+          }
+        }
+
+        function drawShape(x, y, size) {
+          // Get shape from metadata
+          let shapeType = 'circle' // default
+          if (imageMetadata && imageMetadata.lensType) {
+            const lens = imageMetadata.lensType.toLowerCase()
+            if (lens.includes('front')) shapeType = 'circle'
+            else if (lens.includes('wide')) shapeType = 'rectangle'
+            else if (lens.includes('telephoto')) shapeType = 'triangle'
+            else if (lens.includes('macro')) shapeType = 'rhombus'
+            else if (lens.includes('zoom')) shapeType = 'star'
+          }
+          
+          switch (shapeType) {
+            case 'circle':
+              p.ellipse(x, y, size)
+              break
+            case 'rectangle':
+              p.rect(x - size/2, y - size/2, size, size)
+              break
+            case 'triangle':
+              p.triangle(
+                x, y - size,
+                x - size, y + size,
+                x + size, y + size
+              )
+              break
+            case 'rhombus':
+              p.beginShape()
+              p.vertex(x, y - size)
+              p.vertex(x - size, y)
+              p.vertex(x, y + size)
+              p.vertex(x + size, y)
+              p.endShape(p.CLOSE)
+              break
+            case 'star':
+              drawStar(x, y, size)
+              break
+          }
+        }
+
+        function drawStar(x, y, size) {
+          const spikes = 5
+          const outerRadius = size
+          const innerRadius = size * 0.4
+          
+          p.beginShape()
+          for (let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius
+            const angle = (i * p.PI) / spikes
+            const px = x + p.cos(angle) * radius
+            const py = y + p.sin(angle) * radius
+            p.vertex(px, py)
+          }
+          p.endShape(p.CLOSE)
+        }
+      }
+      
+      // Create and run the P5.js sketch
+      const p5Instance = new p5(sketch, canvasRef.current)
+      
+      // Wait for the sketch to render
+      setTimeout(() => {
+        // Copy P5.js canvas to our main canvas with zoom in effect
+        const p5Canvas = p5Instance.canvas
+        const zoomFactor = zoom
+        
+        // Show only the center portion of the larger pattern (zoom in effect)
+        const sourceX = (p5Canvas.width - width) / 2
+        const sourceY = (p5Canvas.height - height) / 2
+        
+        // Draw only a portion of the larger canvas to our display canvas
+        ctx.drawImage(
+          p5Canvas, 
+          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
+          0, 0, width, height               // Destination: full display canvas
+        )
+        
+        // Clean up P5.js instance
+        p5Instance.remove()
+      }, 100)
+      
+    } catch (error) {
+      console.error('Error loading P5.js:', error)
+      // Fallback to simple pattern
+      ctx.fillStyle = tint || '#ffffff'
+      ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20)
     }
   }
 
@@ -137,7 +548,9 @@ const ConsoleFrame = ({
         let animationSpeed = 0.005
 
         p.setup = function() {
-          const canvas = p.createCanvas(width, height)
+          // Create much larger canvas, then show only a portion (zoom in effect)
+          const zoomFactor = zoom // Use zoom parameter from controls
+          const canvas = p.createCanvas(width * zoomFactor, height * zoomFactor)
           p.colorMode(p.HSB, 360, 100, 100, 100)
           p.background(0, 0, 0)
           
@@ -275,9 +688,20 @@ const ConsoleFrame = ({
       
       // Wait for the sketch to render
       setTimeout(() => {
-        // Copy P5.js canvas to our main canvas
+        // Copy P5.js canvas to our main canvas with zoom in effect
         const p5Canvas = p5Instance.canvas
-        ctx.drawImage(p5Canvas, 0, 0, width, height)
+        const zoomFactor = zoom
+        
+        // Show only the center portion of the larger pattern (zoom in effect)
+        const sourceX = (p5Canvas.width - width) / 2
+        const sourceY = (p5Canvas.height - height) / 2
+        
+        // Draw only a portion of the larger canvas to our display canvas
+        ctx.drawImage(
+          p5Canvas, 
+          sourceX, sourceY, width, height,  // Source: center portion of larger canvas
+          0, 0, width, height               // Destination: full display canvas
+        )
         
         // Clean up P5.js instance
         p5Instance.remove()
@@ -359,6 +783,18 @@ const ConsoleFrame = ({
           <div>Frequency: <span className="text-yellow-300">{frequency}</span></div>
           <div>Rotation: <span className="text-yellow-300">{rotation}°</span></div>
           <div>Scale: <span className="text-yellow-300">{scale}x</span></div>
+          <div className="flex items-center gap-2">
+            Zoom: <span className="text-yellow-300">{zoom}x</span>
+            <input
+              type="range"
+              min="1.0"
+              max="5.0"
+              step="0.1"
+              value={zoom}
+              onChange={(e) => onZoomChange(parseFloat(e.target.value))}
+              className="w-20 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
           <div className="flex items-center gap-2">
             Tint: 
             <span className="text-yellow-300">{tint || 'none'}</span>
@@ -533,11 +969,13 @@ const ConsoleFrame = ({
             rotation={rotation}
             scale={scale}
             tint={tint}
+            zoom={zoom}
             onPatternTypeChange={onPatternTypeChange}
             onFrequencyChange={onFrequencyChange}
             onRotationChange={onRotationChange}
             onScaleChange={onScaleChange}
             onTintChange={onTintChange}
+            onZoomChange={onZoomChange}
           />
         </div>
       </div>

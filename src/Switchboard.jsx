@@ -7,11 +7,13 @@ const Switchboard = ({
   rotation, 
   scale, 
   tint,
+  zoom,
   onPatternTypeChange,
   onFrequencyChange,
   onRotationChange,
   onScaleChange,
-  onTintChange
+  onTintChange,
+  onZoomChange
 }) => {
   return (
     <Controls 
@@ -20,11 +22,13 @@ const Switchboard = ({
       rotation={rotation}
       scale={scale}
       tint={tint}
+      zoom={zoom}
       onPatternTypeChange={onPatternTypeChange}
       onFrequencyChange={onFrequencyChange}
       onRotationChange={onRotationChange}
       onScaleChange={onScaleChange}
       onTintChange={onTintChange}
+      onZoomChange={onZoomChange}
     />
   )
 }
