@@ -160,9 +160,22 @@ const ConsoleFrame = ({
               const waveY = baseY + Math.sin(x * settings.frequency + rotation * Math.PI / 180) * settings.amplitude
               
               // Apply tinting to white base color
-              const baseColor = p.color(255, 255, 255)
-              const tintedColor = applyTintToColor(baseColor, tint)
-              p.fill(tintedColor)
+              if (tint && tint !== '#FFFFFF') {
+                // Convert tint color to RGB
+                const tintR = parseInt(tint.slice(1, 3), 16)
+                const tintG = parseInt(tint.slice(3, 5), 16)
+                const tintB = parseInt(tint.slice(5, 7), 16)
+                
+                // Blend white (255,255,255) with tint color using multiplication
+                const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+                const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+                const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+                
+                p.fill(blendedR, blendedG, blendedB)
+              } else {
+                // No tinting, use white
+                p.fill(255, 255, 255)
+              }
               p.noStroke()
               
               // Draw shape at wave position
@@ -368,8 +381,22 @@ const ConsoleFrame = ({
             particle.size = p.map(elevation, 0, 1, settings.dotMinSize, settings.dotMaxSize) * sizeMultiplier
             
             // Apply tinting to white base color
-            const baseColor = p.color(255, 255, 255, 255)
-            particle.color = applyTintToColor(baseColor, tint)
+            if (tint && tint !== '#FFFFFF') {
+              // Convert tint color to RGB
+              const tintR = parseInt(tint.slice(1, 3), 16)
+              const tintG = parseInt(tint.slice(3, 5), 16)
+              const tintB = parseInt(tint.slice(5, 7), 16)
+              
+              // Blend white (255,255,255) with tint color using multiplication
+              const blendedR = Math.min(255, Math.floor(255 * tintR / 255))
+              const blendedG = Math.min(255, Math.floor(255 * tintG / 255))
+              const blendedB = Math.min(255, Math.floor(255 * tintB / 255))
+              
+              particle.color = p.color(blendedR, blendedG, blendedB, 255)
+            } else {
+              // No tinting, use white
+              particle.color = p.color(255, 255, 255, 255)
+            }
             
             // Draw shape
             drawShape(particle)
@@ -885,29 +912,6 @@ const ConsoleFrame = ({
     }
   }
 
-  // Helper function to apply tinting to a color
-  const applyTintToColor = (baseColor, tintColor) => {
-    if (!tintColor || tintColor === '#FFFFFF') {
-      return baseColor // No tinting, return original color
-    }
-    
-    // Convert tint color to RGB
-    const tintR = parseInt(tintColor.slice(1, 3), 16)
-    const tintG = parseInt(tintColor.slice(3, 5), 16)
-    const tintB = parseInt(tintColor.slice(5, 7), 16)
-    
-    // Get base color RGB values
-    const baseR = baseColor.levels[0] || 255
-    const baseG = baseColor.levels[1] || 255
-    const baseB = baseColor.levels[2] || 255
-    
-    // Blend the colors (simple multiplication blend)
-    const blendedR = Math.min(255, Math.floor(baseR * tintR / 255))
-    const blendedG = Math.min(255, Math.floor(baseG * tintG / 255))
-    const blendedB = Math.min(255, Math.floor(baseB * tintB / 255))
-    
-    return baseColor.constructor(blendedR, blendedG, blendedB)
-  }
 
   // Helper function to draw shapes
   const drawShape = (ctx, x, y, size, shapeType) => {
