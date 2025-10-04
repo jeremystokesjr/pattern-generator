@@ -11,6 +11,7 @@ function App() {
   const [imageMetadata, setImageMetadata] = useState(null)
   const [isExtractingMetadata, setIsExtractingMetadata] = useState(false)
   const [isCartridgeInserted, setIsCartridgeInserted] = useState(false)
+  const [isEjected, setIsEjected] = useState(false)
   
   // State for control values
   const [patternType, setPatternType] = useState('wave') // 'wave', 'bump', 'contour'
@@ -143,13 +144,21 @@ function App() {
     setUploadedImage(null)
     setImageMetadata(null)
     setIsCartridgeInserted(false)
+    setIsEjected(false) // Reset eject state
     console.log('Image removed')
   }
 
   // Handle cartridge insertion
   const handleCartridgeInserted = () => {
     setIsCartridgeInserted(true)
+    setIsEjected(false)
     console.log('Cartridge inserted')
+  }
+
+  const handleEject = () => {
+    setIsCartridgeInserted(false)
+    setIsEjected(true)
+    console.log('Cartridge ejected')
   }
 
   // Handle background removal toggle
@@ -186,8 +195,9 @@ function App() {
             onImageRemove={handleImageRemove}
             onRemoveBackgroundChange={handleRemoveBackgroundChange}
             onCartridgeInserted={handleCartridgeInserted}
+            onEject={handleEject}
           />
-          <UploadArea uploadedImage={uploadedImage} onImageUpload={handleImageUpload} />
+          {!isCartridgeInserted && <UploadArea uploadedImage={uploadedImage} onImageUpload={handleImageUpload} />}
         </div>
         
         {/* Footer */}

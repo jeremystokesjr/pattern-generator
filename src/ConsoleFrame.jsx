@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useState } from 'react'
 import Switchboard from './Switchboard'
 
 const ConsoleFrame = ({ 
   uploadedImage, 
   imageMetadata,
   isExtractingMetadata,
+  isCartridgeInserted,
   patternType, 
   frequency, 
   rotation, 
@@ -20,12 +21,53 @@ const ConsoleFrame = ({
   onTintChange,
   onZoomChange,
   onAnimationSpeedChange,
-  onImageRemove
+  onImageRemove,
+  onCartridgeInserted,
+  onEject
 }) => {
   const canvasRef = useRef(null)
   const contourP5InstanceRef = useRef(null)
   const bumpP5InstanceRef = useRef(null)
   const waveP5InstanceRef = useRef(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [showInsertedCartridge, setShowInsertedCartridge] = useState(false)
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = (e) => {
+    e.preventDefault()
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    
+    const data = e.dataTransfer.getData('text/plain')
+    console.log('Drop data:', data)
+    if (data === 'cartridge') {
+      console.log('Cartridge dropped on console!')
+      setShowInsertedCartridge(true)
+      console.log('showInsertedCartridge set to true')
+      onCartridgeInserted()
+    }
+  }
+
+  const handleEjectClick = () => {
+    console.log('Eject button clicked!')
+    setShowInsertedCartridge(false)
+    onEject()
+  }
+
+  // Sync inserted cartridge state with prop
+  useEffect(() => {
+    setShowInsertedCartridge(isCartridgeInserted)
+  }, [isCartridgeInserted])
 
   // Cleanup function for contour pattern
   const cleanupContourPattern = () => {
@@ -67,32 +109,38 @@ const ConsoleFrame = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
-    // Special handling for animated patterns - continuous animation
-    if (patternType === 'contour') {
-      // Clean up any existing patterns
-      cleanupAllPatterns()
-      // Start continuous contour animation
-      generateContourPatternContinuous(ctx, canvas.width, canvas.height)
-    } else if (patternType === 'bump') {
-      // Clean up any existing patterns
-      cleanupAllPatterns()
-      // Start continuous bump animation
-      generateBumpPatternContinuous(ctx, canvas.width, canvas.height)
-    } else if (patternType === 'wave') {
-      // Clean up any existing patterns
-      cleanupAllPatterns()
-      // Start continuous wave animation
-      generateWavePatternContinuous(ctx, canvas.width, canvas.height)
+    // Only generate patterns if cartridge is inserted
+    if (isCartridgeInserted) {
+      // Special handling for animated patterns - continuous animation
+      if (patternType === 'contour') {
+        // Clean up any existing patterns
+        cleanupAllPatterns()
+        // Start continuous contour animation
+        generateContourPatternContinuous(ctx, canvas.width, canvas.height)
+      } else if (patternType === 'bump') {
+        // Clean up any existing patterns
+        cleanupAllPatterns()
+        // Start continuous bump animation
+        generateBumpPatternContinuous(ctx, canvas.width, canvas.height)
+      } else if (patternType === 'wave') {
+        // Clean up any existing patterns
+        cleanupAllPatterns()
+        // Start continuous wave animation
+        generateWavePatternContinuous(ctx, canvas.width, canvas.height)
+      } else {
+        // Clean up any existing animated patterns
+        cleanupAllPatterns()
+        // Generate other patterns normally (static)
+    generatePattern(ctx, canvas.width, canvas.height)
+      }
     } else {
-      // Clean up any existing animated patterns
+      // Clean up any existing patterns when cartridge is not inserted
       cleanupAllPatterns()
-      // Generate other patterns normally (static)
-      generatePattern(ctx, canvas.width, canvas.height)
     }
     
     // Cleanup on unmount or pattern change
     return cleanupAllPatterns
-  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed])
+  }, [uploadedImage, tint, patternType, frequency, rotation, scale, zoom, animationSpeed, isCartridgeInserted])
 
   // Continuous contour pattern generation
   const generateContourPatternContinuous = async (ctx, width, height) => {
@@ -1837,9 +1885,9 @@ const ConsoleFrame = ({
       <div className="relative bg-[#F1F1F1] rounded-xl shadow-lg p-6 w-[626px] h-[800px] flex-shrink-0 border-b-[10px] border-b-[#676767]">
         {/* Canvas Area - Centered */}
         <div className="flex justify-center mb-6">
-          <div className="bg-[#232323] rounded-md h-[417px] w-[590px] flex-shrink-0 relative">
+          <div className="bg-[#232323] rounded-md h-[417px] w-[590px] flex-shrink-0 relative" style={{ zIndex: 2 }}>
             {/* Screen - Left justified in canvas area */}
-            <div className="absolute top-2 left-2 bg-black rounded-md h-[403px] w-[535px]">
+            <div className="absolute top-2 left-2 bg-black rounded-md h-[403px] w-[535px]" style={{ zIndex: 3 }}>
               {/* Canvas for pattern rendering */}
               <canvas
                 ref={canvasRef}
@@ -1847,12 +1895,30 @@ const ConsoleFrame = ({
                 height={403}
                 className="w-full h-full rounded-md"
               />
+              
+              {/* Add cartridge to start text - shows when cartridge uploaded but not inserted */}
+              {uploadedImage && !isCartridgeInserted && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-white text-lg font-mono animate-pulse">
+                    Add cartridge to start
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Icons on the right side */}
             <div className="absolute top-[70px] right-2 flex flex-col justify-between h-[277px]">
-              {/* Eject Icon */}
-              <div className="w-6 h-6 flex items-center justify-center cursor-pointer">
+              {/* Eject Icon - Drop Target */}
+              <div 
+                className={`w-6 h-6 flex items-center justify-center cursor-pointer transition-all duration-200 ${
+                  isDragOver ? 'bg-[#FF9966] bg-opacity-30 rounded' : 
+                  isCartridgeInserted ? 'bg-[#FF9966] bg-opacity-50 rounded' : ''
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={isCartridgeInserted ? handleEjectClick : undefined}
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" width="26" height="19" viewBox="0 0 26 19" fill="none">
                   <path d="M0 16H26V19H0V16Z" fill="#FFFFFF" fillOpacity="0.3"/>
                   <path d="M13 0L25.9904 11.25H0.00961876L13 0Z" fill="#FFFFFF" fillOpacity="0.3"/>
@@ -1889,6 +1955,12 @@ const ConsoleFrame = ({
             onAnimationSpeedChange={onAnimationSpeedChange}
           />
         </div>
+
+        {/* Inserted Cartridge - Independent positioning */}
+        {showInsertedCartridge && (
+          <div className="absolute top-[50px] right-[-12px] w-3 h-[111px] bg-gradient-to-b from-[#F85C3B] to-[#C9492D] rounded-sm border border-[#BA452C]" style={{ zIndex: 1 }}>
+          </div>
+        )}
       </div>
     </div>
   )

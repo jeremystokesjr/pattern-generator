@@ -13,6 +13,7 @@ UI / Craft
 - add the image downloaded function (static and animated)
 - fix the UI does not have padding on the right side (right edge of tint and speed dials)
 - fix jittieriness when the dials are rotated. The pattern seems to redraw each time the controls are changed, this should be smoother.
+- fix the change in positioning when the cartridge is added and removed from the system.
 
 
 Upload
